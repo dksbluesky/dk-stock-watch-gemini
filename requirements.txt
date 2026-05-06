@@ -3,3 +3,4 @@ pandas
 FinMind
 tqdm
 requests
+urllib3
