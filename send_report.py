@@ -6,8 +6,8 @@ from datetime import datetime, timedelta
 def get_finmind_data(dataset, data_id=None):
     url = "https://api.finmindtrade.com/api/v4/data"
     token = os.getenv("FINMIND_TOKEN")
-    # 抓取最近 15 天確保有資料，尤其是過完週末後
-    start_date = (datetime.now() - timedelta(days=15)).strftime('%Y-%m-%d')
+    # 將回溯天數增加到 20 天，確保跨長假也能抓到資料
+    start_date = (datetime.now() - timedelta(days=20)).strftime('%Y-%m-%d')
     params = {"dataset": dataset, "start_date": start_date, "token": token}
     if data_id: params["data_id"] = data_id
     
@@ -24,20 +24,20 @@ def generate_report():
         # 1. 外資大台期貨
         df_fut = get_finmind_data("TaiwanFuturesInstitutionalId", "TXF")
         if not df_fut.empty and 'institutional_id' in df_fut.columns:
-            df_fut = df_fut[df_fut['institutional_id'] == 'Foreign'].tail(2)
+            df_fut = df_fut[df_fut['institutional_id'] == 'Foreign']
         
         # 2. 大盤融資餘額
-        df_m_total = get_finmind_data("TaiwanStockTotalMarginPurchaseShortSale").tail(2)
+        df_m_total = get_finmind_data("TaiwanStockTotalMarginPurchaseShortSale")
         
-        # 3. 006208 融資與借券
-        df_m_006208 = get_finmind_data("TaiwanStockMarginPurchaseShortSale", "006208").tail(2)
-        df_sbl = get_finmind_data("TaiwanStockSbl", "006208").tail(2)
+        # 3. 006208 數據
+        df_m_006208 = get_finmind_data("TaiwanStockMarginPurchaseShortSale", "006208")
+        df_sbl = get_finmind_data("TaiwanStockSbl", "006208")
 
-        # 安全檢查：確保所有資料都抓到了
-        if df_fut.empty or df_m_total.empty or df_m_006208.empty:
-            return "⚠️ 目前部分數據更新中，請稍後再試。"
+        # 核心檢查：確保至少有兩筆資料可以計算增減
+        if len(df_fut) < 2 or len(df_m_total) < 2:
+            return "📊 目前為市場非交易時段，伺服器數據整理中。請於下一個交易日 17:30 再次查看最準確的報告。"
 
-        # 數據處理與增減計算
+        # 取最後兩筆資料計算
         fut_now = df_fut.iloc[-1]['open_interest_net']
         fut_diff = fut_now - df_fut.iloc[-2]['open_interest_net']
         
@@ -52,22 +52,19 @@ def generate_report():
 
         date_str = df_fut.iloc[-1]['date']
         
-        # 格式化輸出內容
         report = f"📊 {date_str} 盤後籌碼結算報告\n"
         report += "--------------------------------\n"
         report += f"1. 外資大台期貨：{int(fut_now):,} 口 ({'空增' if fut_diff < 0 else '空減'} {int(abs(fut_diff)):,} 口)\n"
         report += f"2. 大盤融資餘額：{m_total_now:,.2f} 億 ({'增' if m_total_diff > 0 else '減'} {abs(m_total_diff):,.2f} 億)\n"
         report += f"3. 006208 融資：{int(m_006208_now):,} 張 ({'增' if m_006208_diff > 0 else '減'} {int(abs(m_006208_diff)):,} 張)\n"
         report += f"4. 006208 借券：{int(sbl_now):,} 張 ({'增' if sbl_diff > 0 else '減'} {int(abs(sbl_diff)):,} 張)\n\n"
-        
         report += "🔍 籌碼面專業解析\n"
-        report += f"• 外資空單水位 {'偏高' if fut_now < -40000 else '適中'}。\n"
-        report += f"• 大盤融資目前傾向於 {'籌碼清洗' if m_total_diff < 0 else '信心持穩'}。\n"
-        report += "• 下週開盤建議優先關注台積電月線支撐。"
+        report += f"• 外資目前淨部位約 {int(fut_now):,} 口，壓力位階較高。\n"
+        report += f"• 融資餘額變動為 {m_total_diff:,.2f} 億，顯示散戶籌碼{'趨於保守' if m_total_diff < 0 else '轉向積極'}。"
         
         return report
     except Exception as e:
-        return f"❌ 數據彙整異常，請聯繫開發者檢查邏輯。({str(e)})"
+        return f"❌ 系統邏輯異常：{str(e)}"
 
 def send_tg(text):
     bot_token = os.getenv("TELEGRAM_TOKEN")
