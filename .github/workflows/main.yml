@@ -4,17 +4,17 @@ on:
   schedule:
     # 台灣時間 17:30 = UTC 09:30
     - cron: '30 9 * * 1-5'
-  workflow_dispatch: # 讓您可以手動在網頁按 Run 手動測試
+  workflow_dispatch: 
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4  # 這裡從 v3 升級到 v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5  # 這裡從 v4 升級到 v5
         with:
           python-version: '3.10'
 
