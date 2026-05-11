@@ -62,9 +62,16 @@ def generate_report():
         fut_now = df_fut.iloc[-1]['open_interest_net']
         fut_diff = fut_now - df_fut.iloc[-2]['open_interest_net']
         
+        def col_or_err(df, col, label):
+            if col not in df.columns:
+                raise ValueError(f"{label} 找不到欄位 '{col}'，可用欄位: {list(df.columns)}")
+            return col
+
+        col_or_err(df_m_total, 'MarginPurchaseTodayBalance', 'TaiwanStockTotalMarginPurchaseShortSale')
         m_total_now = df_m_total.iloc[-1]['MarginPurchaseTodayBalance'] / 100000000
         m_total_diff = m_total_now - (df_m_total.iloc[-2]['MarginPurchaseTodayBalance'] / 100000000)
-        
+
+        col_or_err(df_m_006208, 'MarginPurchaseTodayBalance', 'TaiwanStockMarginPurchaseShortSale')
         m_006208_now = df_m_006208.iloc[-1]['MarginPurchaseTodayBalance']
         m_006208_diff = m_006208_now - df_m_006208.iloc[-2]['MarginPurchaseTodayBalance']
         
