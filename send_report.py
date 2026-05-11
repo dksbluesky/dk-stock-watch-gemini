@@ -23,10 +23,18 @@ def get_finmind_data(dataset, data_id=None):
 
 def generate_report():
     try:
-        # 1. 外資大台期貨 (修正代號為 TX，確保與 FinMind 資料庫對齊)
-        df_fut = get_finmind_data("TaiwanFuturesInstitutionalId", "TX")
-        if not df_fut.empty and 'institutional_id' in df_fut.columns:
-            df_fut = df_fut[df_fut['institutional_id'] == 'Foreign']
+        # 1. 外資大台期貨：TaiwanFuturesInstitutional 為指數期貨三大法人資料集
+        #    TaiwanFuturesInstitutionalId 是個股期貨用，傳 TX 會 422
+        df_fut = get_finmind_data("TaiwanFuturesInstitutional")
+        if not df_fut.empty:
+            # 過濾大台 TX 契約
+            for col in ('futures_id', 'contract_code', 'name'):
+                if col in df_fut.columns:
+                    df_fut = df_fut[df_fut[col] == 'TX']
+                    break
+            # 過濾外資
+            if 'institutional_id' in df_fut.columns:
+                df_fut = df_fut[df_fut['institutional_id'] == 'Foreign']
         
         # 2. 大盤融資餘額
         df_m_total = get_finmind_data("TaiwanStockTotalMarginPurchaseShortSale")
