@@ -23,18 +23,19 @@ def get_finmind_data(dataset, data_id=None):
 
 def generate_report():
     try:
-        # 1. 外資大台期貨：TaiwanFuturesInstitutional 為指數期貨三大法人資料集
-        #    TaiwanFuturesInstitutionalId 是個股期貨用，傳 TX 會 422
-        df_fut = get_finmind_data("TaiwanFuturesInstitutional")
+        # 1. 外資大台期貨：正確資料集為 TaiwanFuturesInstitutionalInvestors
+        df_fut = get_finmind_data("TaiwanFuturesInstitutionalInvestors", "TX")
         if not df_fut.empty:
-            # 過濾大台 TX 契約
-            for col in ('futures_id', 'contract_code', 'name'):
+            # 過濾外資；欄位可能為 institutional_investors 或 name
+            for col in ('institutional_investors', 'name'):
                 if col in df_fut.columns:
-                    df_fut = df_fut[df_fut[col] == 'TX']
+                    # 外資值可能為 '外資及陸資(不含自營商)' 或含 '外資'
+                    mask = df_fut[col].str.contains('外資', na=False)
+                    if mask.any():
+                        df_fut = df_fut[mask]
                     break
-            # 過濾外資
-            if 'institutional_id' in df_fut.columns:
-                df_fut = df_fut[df_fut['institutional_id'] == 'Foreign']
+        if df_fut.empty:
+            raise ValueError(f"外資大台期貨資料為空，請確認 TaiwanFuturesInstitutionalInvestors data_id=TX 是否有效")
         
         # 2. 大盤融資餘額
         df_m_total = get_finmind_data("TaiwanStockTotalMarginPurchaseShortSale")
@@ -53,8 +54,12 @@ def generate_report():
             )
 
         # --- 原有數據計算 ---
-        fut_now = df_fut.iloc[-1]['open_interest_net']
-        fut_diff = fut_now - df_fut.iloc[-2]['open_interest_net']
+        # 欄位名稱依資料集而異：open_interest_net_buy 或 open_interest_net
+        net_col = next((c for c in ('open_interest_net_buy', 'open_interest_net') if c in df_fut.columns), None)
+        if net_col is None:
+            raise ValueError(f"找不到外資期貨淨口數欄位，可用欄位: {list(df_fut.columns)}")
+        fut_now = df_fut.iloc[-1][net_col]
+        fut_diff = fut_now - df_fut.iloc[-2][net_col]
         
         m_total_now = df_m_total.iloc[-1]['MarginPurchaseTodayBalance'] / 100000000
         m_total_diff = m_total_now - (df_m_total.iloc[-2]['MarginPurchaseTodayBalance'] / 100000000)
