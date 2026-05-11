@@ -68,9 +68,9 @@ def generate_report():
             return col
 
         # name 欄位區分融資/融券，過濾出融資列
-        df_m_total_margin = df_m_total[df_m_total['name'] == 'MarginPurchase']
+        df_m_total_margin = df_m_total[df_m_total['name'] == 'MarginPurchaseMoney']
         if df_m_total_margin.empty:
-            raise ValueError(f"TaiwanStockTotalMarginPurchaseShortSale 找不到 MarginPurchase，name值: {df_m_total['name'].unique().tolist()}")
+            raise ValueError(f"TaiwanStockTotalMarginPurchaseShortSale 找不到 MarginPurchaseMoney，name值: {df_m_total['name'].unique().tolist()}")
         m_total_now = df_m_total_margin.iloc[-1]['TodayBalance'] / 100000000
         m_total_diff = (df_m_total_margin.iloc[-1]['TodayBalance'] - df_m_total_margin.iloc[-1]['YesBalance']) / 100000000
 
