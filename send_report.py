@@ -44,7 +44,7 @@ def generate_report():
         df_m_006208 = get_finmind_data("TaiwanStockMarginPurchaseShortSale", "006208")
         df_price = get_finmind_data("TaiwanStockPrice", "006208")
         # 借券數據
-        df_sbl = get_finmind_data("TaiwanStockSbl", "006208")
+        df_sbl = get_finmind_data("TaiwanStockSecuritiesLending", "006208")
 
         if len(df_fut) < 2 or len(df_m_total) < 2 or len(df_price) < 2:
             tw_now = datetime.utcnow() + timedelta(hours=8)
@@ -67,8 +67,10 @@ def generate_report():
         m_006208_now = df_m_006208.iloc[-1]['MarginPurchaseTodayBalance']
         m_006208_diff = m_006208_now - df_m_006208.iloc[-2]['MarginPurchaseTodayBalance']
         
-        sbl_now = df_sbl.iloc[-1]['ShortSaleTodayBalance'] if not df_sbl.empty else 0
-        sbl_diff = (sbl_now - df_sbl.iloc[-2]['ShortSaleTodayBalance']) if len(df_sbl) > 1 else 0
+        # TaiwanStockSecuritiesLending 欄位名稱可能為 SBL_Balance 或其他
+        _sbl_col = next((c for c in ('SBL_Balance', 'balance', 'ShortSaleTodayBalance') if not df_sbl.empty and c in df_sbl.columns), None)
+        sbl_now = int(df_sbl.iloc[-1][_sbl_col]) if _sbl_col else 0
+        sbl_diff = (sbl_now - int(df_sbl.iloc[-2][_sbl_col])) if (_sbl_col and len(df_sbl) > 1) else 0
 
         # --- 新增：券資比與量能判定邏輯 ---
         # 計算券資比
