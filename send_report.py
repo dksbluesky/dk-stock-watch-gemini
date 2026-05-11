@@ -6,20 +6,20 @@ from datetime import datetime, timedelta
 def get_finmind_data(dataset, data_id=None):
     url = "https://api.finmindtrade.com/api/v4/data"
     token = os.getenv("FINMIND_TOKEN")
-    # 修正：確保以台灣時間 (UTC+8) 計算日期基準
+    if not token:
+        raise ValueError("FINMIND_TOKEN 環境變數未設定，請在 GitHub Secrets 中新增此金鑰。")
     tw_now = datetime.utcnow() + timedelta(hours=8)
-    # 將回溯天數增加到 40 天，確保計算 20MA 量能時有足夠資料
     start_date = (tw_now - timedelta(days=40)).strftime('%Y-%m-%d')
     params = {"dataset": dataset, "start_date": start_date, "token": token}
-    if data_id: params["data_id"] = data_id
-    
-    try:
-        resp = requests.get(url, params=params)
-        data = resp.json()
-        df = pd.DataFrame(data.get("data", []))
-        return df
-    except:
-        return pd.DataFrame()
+    if data_id:
+        params["data_id"] = data_id
+    resp = requests.get(url, params=params, timeout=30)
+    resp.raise_for_status()
+    data = resp.json()
+    if data.get("status") != 200:
+        raise ValueError(f"FinMind API 錯誤 [{dataset}]: status={data.get('status')}, msg={data.get('msg', '未知錯誤')}")
+    df = pd.DataFrame(data.get("data", []))
+    return df
 
 def generate_report():
     try:
@@ -37,9 +37,12 @@ def generate_report():
         # 借券數據
         df_sbl = get_finmind_data("TaiwanStockSbl", "006208")
 
-        # 核心檢查
         if len(df_fut) < 2 or len(df_m_total) < 2 or len(df_price) < 2:
-            return "📊 目前為市場非交易時段，伺服器數據整理中。請於下一個交易日 17:30 再次查看最準確的報告。"
+            tw_now = datetime.utcnow() + timedelta(hours=8)
+            raise ValueError(
+                f"資料筆數不足 (外資期貨:{len(df_fut)}, 大盤融資:{len(df_m_total)}, 股價:{len(df_price)}) "
+                f"[台灣時間 {tw_now.strftime('%Y-%m-%d %H:%M')}，星期{tw_now.weekday()+1}]"
+            )
 
         # --- 原有數據計算 ---
         fut_now = df_fut.iloc[-1]['open_interest_net']
