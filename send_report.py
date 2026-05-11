@@ -54,12 +54,13 @@ def generate_report():
             )
 
         # --- 原有數據計算 ---
-        # 欄位名稱依資料集而異：open_interest_net_buy 或 open_interest_net
-        net_col = next((c for c in ('open_interest_net_buy', 'open_interest_net') if c in df_fut.columns), None)
-        if net_col is None:
-            raise ValueError(f"找不到外資期貨淨口數欄位，可用欄位: {list(df_fut.columns)}")
-        fut_now = df_fut.iloc[-1][net_col]
-        fut_diff = fut_now - df_fut.iloc[-2][net_col]
+        # TaiwanFuturesInstitutionalInvestors 無淨口數欄位，自行計算
+        df_fut = df_fut.copy()
+        df_fut['open_interest_net'] = (
+            df_fut['long_open_interest_balance_volume'] - df_fut['short_open_interest_balance_volume']
+        )
+        fut_now = df_fut.iloc[-1]['open_interest_net']
+        fut_diff = fut_now - df_fut.iloc[-2]['open_interest_net']
         
         m_total_now = df_m_total.iloc[-1]['MarginPurchaseTodayBalance'] / 100000000
         m_total_diff = m_total_now - (df_m_total.iloc[-2]['MarginPurchaseTodayBalance'] / 100000000)
