@@ -67,9 +67,12 @@ def generate_report():
                 raise ValueError(f"{label} 找不到欄位 '{col}'，可用欄位: {list(df.columns)}")
             return col
 
-        col_or_err(df_m_total, 'MarginPurchaseTodayBalance', 'TaiwanStockTotalMarginPurchaseShortSale')
-        m_total_now = df_m_total.iloc[-1]['MarginPurchaseTodayBalance'] / 100000000
-        m_total_diff = m_total_now - (df_m_total.iloc[-2]['MarginPurchaseTodayBalance'] / 100000000)
+        # name 欄位區分融資/融券，過濾出融資列
+        df_m_total_margin = df_m_total[df_m_total['name'].str.contains('融資', na=False)]
+        if df_m_total_margin.empty:
+            raise ValueError(f"TaiwanStockTotalMarginPurchaseShortSale 找不到融資資料，name值: {df_m_total['name'].unique().tolist()}")
+        m_total_now = df_m_total_margin.iloc[-1]['TodayBalance'] / 100000000
+        m_total_diff = (df_m_total_margin.iloc[-1]['TodayBalance'] - df_m_total_margin.iloc[-1]['YesBalance']) / 100000000
 
         col_or_err(df_m_006208, 'MarginPurchaseTodayBalance', 'TaiwanStockMarginPurchaseShortSale')
         m_006208_now = df_m_006208.iloc[-1]['MarginPurchaseTodayBalance']
