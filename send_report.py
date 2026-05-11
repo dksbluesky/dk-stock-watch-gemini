@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 def get_finmind_data(dataset, data_id=None):
     url = "https://api.finmindtrade.com/api/v4/data"
     token = os.getenv("FINMIND_TOKEN")
-    # 修正：確保以台灣時間 (UTC+8) 計算，避免跨日抓不到資料
+    # 修正：確保以台灣時間 (UTC+8) 為準計算回溯日期，避免時差造成抓不到資料
     tw_now = datetime.utcnow() + timedelta(hours=8)
     # 將回溯天數增加到 40 天，確保計算 20MA 量能時有足夠資料
     start_date = (tw_now - timedelta(days=40)).strftime('%Y-%m-%d')
@@ -23,7 +23,7 @@ def get_finmind_data(dataset, data_id=None):
 
 def generate_report():
     try:
-        # 1. 外資大台期貨 (修正 ID 為 TX 以符合 FinMind 規範)
+        # 1. 外資大台期貨 (修正 ID 為 TX，確保能精確對應日期數據)
         df_fut = get_finmind_data("TaiwanFuturesInstitutionalId", "TX")
         if not df_fut.empty and 'institutional_id' in df_fut.columns:
             df_fut = df_fut[df_fut['institutional_id'] == 'Foreign']
