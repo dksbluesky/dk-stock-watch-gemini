@@ -140,8 +140,24 @@ def generate_report():
 def send_tg(text):
     bot_token = os.getenv("TELEGRAM_TOKEN")
     chat_id = os.getenv("TELEGRAM_CHAT_ID")
+    if not bot_token:
+        raise ValueError("TELEGRAM_TOKEN 未設定")
+    if not chat_id:
+        raise ValueError("TELEGRAM_CHAT_ID 未設定")
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-    requests.post(url, data={"chat_id": chat_id, "text": text})
+    resp = requests.post(url, data={"chat_id": chat_id, "text": text}, timeout=30)
+    print(f"[TG] status={resp.status_code}, body={resp.text[:200]}")
+    resp.raise_for_status()
 
 if __name__ == "__main__":
-    send_tg(generate_report())
+    import sys
+    report = generate_report()
+    print("=== REPORT ===")
+    print(report)
+    print("==============")
+    try:
+        send_tg(report)
+        print("[TG] 訊息傳送成功")
+    except Exception as e:
+        print(f"[TG] 傳送失敗：{e}")
+        sys.exit(1)
