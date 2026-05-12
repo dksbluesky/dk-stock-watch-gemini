@@ -43,8 +43,6 @@ def generate_report():
         # 3. 006208 數據 (融資、融券、股價)
         df_m_006208 = get_finmind_data("TaiwanStockMarginPurchaseShortSale", "006208")
         df_price = get_finmind_data("TaiwanStockPrice", "006208")
-        # 借券數據
-        df_sbl = get_finmind_data("TaiwanStockSecuritiesLending", "006208")
 
         if len(df_fut) < 2 or len(df_m_total) < 2 or len(df_price) < 2:
             tw_now = datetime.utcnow() + timedelta(hours=8)
@@ -78,13 +76,10 @@ def generate_report():
         m_006208_now = df_m_006208.iloc[-1]['MarginPurchaseTodayBalance']
         m_006208_diff = m_006208_now - df_m_006208.iloc[-2]['MarginPurchaseTodayBalance']
         
-        if df_sbl.empty:
-            raise ValueError("TaiwanStockSecuritiesLending 006208 資料為空")
-        _sbl_col = next((c for c in ('SBL_Balance', 'balance', 'ShortSaleTodayBalance') if c in df_sbl.columns), None)
-        if _sbl_col is None:
-            raise ValueError(f"TaiwanStockSecuritiesLending 找不到借券餘額欄位，可用欄位: {list(df_sbl.columns)}")
-        sbl_now = int(df_sbl.iloc[-1][_sbl_col])
-        sbl_diff = (sbl_now - int(df_sbl.iloc[-2][_sbl_col])) if len(df_sbl) > 1 else 0
+        # 借券餘額直接取 TaiwanStockMarginPurchaseShortSale 的 ShortSaleTodayBalance
+        col_or_err(df_m_006208, 'ShortSaleTodayBalance', 'TaiwanStockMarginPurchaseShortSale')
+        sbl_now = int(df_m_006208.iloc[-1]['ShortSaleTodayBalance'])
+        sbl_diff = sbl_now - int(df_m_006208.iloc[-2]['ShortSaleTodayBalance'])
 
         # --- 新增：券資比與量能判定邏輯 ---
         # 計算券資比
