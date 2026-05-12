@@ -82,18 +82,34 @@ def generate_report():
         sbl_diff = sbl_now - int(df_m_006208.iloc[-2]['ShortSaleTodayBalance'])
 
         # --- 新增：券資比與量能判定邏輯 ---
-        # 計算券資比
+        # 計算券資比（今日與昨日）
         short_bal_now = df_m_006208.iloc[-1]['ShortSaleTodayBalance']
         short_ratio = (short_bal_now / m_006208_now) * 100
-        
+        short_bal_prev = df_m_006208.iloc[-2]['ShortSaleTodayBalance']
+        m_006208_prev = df_m_006208.iloc[-2]['MarginPurchaseTodayBalance']
+        short_ratio_prev = (short_bal_prev / m_006208_prev) * 100 if m_006208_prev else 0
+        short_ratio_diff = short_ratio - short_ratio_prev
+
+        # 券資比變動 × 股價變動 情境判定
+        price_change = df_price.iloc[-1]['close'] - df_price.iloc[-2]['close']
+        ratio_up = short_ratio_diff > 0
+        price_up = price_change > 0
+        if ratio_up and price_up:
+            chip_situation = "🔥 軋空啟動：空方被迫買回，助長多頭氣勢。"
+        elif not ratio_up and not price_up:
+            chip_situation = "⚠️ 殺多盤：多方認賠殺出，融資斷頭壓力大。"
+        elif ratio_up and not price_up:
+            chip_situation = "🐻 空頭壓制：看空者眾且判斷正確，股價積弱不振。"
+        else:
+            chip_situation = "🏳️ 軋空結束：空方已投降補回，後續推升力道減弱。"
+
         # 計算量能 20MA
         df_price['vol_20ma'] = df_price['Trading_Volume'].rolling(20).mean()
         curr_vol = df_price.iloc[-1]['Trading_Volume']
         ma20_vol = df_price.iloc[-1]['vol_20ma']
         vol_ratio = curr_vol / ma20_vol # 當前量是 20MA 的幾倍
         
-        # 判定結論 (依照您的對照表)
-        price_change = df_price.iloc[-1]['close'] - df_price.iloc[-2]['close']
+        # 量能判定結論
         if price_change > 0 and vol_ratio >= 1.5:
             analysis_text = f"🚀 異常放量上漲 ({vol_ratio:.1f}倍量)，若券資比同步升高則具備軋空潛力。"
         elif price_change < 0 and vol_ratio >= 1.5:
@@ -110,7 +126,8 @@ def generate_report():
         report += f"3. 006208 融資：{int(m_006208_now):,} 張 ({'增' if m_006208_diff > 0 else '減'} {int(abs(m_006208_diff)):,} 張)\n"
         report += f"4. 006208 借券：{int(sbl_now):,} 張 ({'增' if sbl_diff > 0 else '減'} {int(abs(sbl_diff)):,} 張)\n"
         report += "--------------------------------\n"
-        report += f"🔹 006208 券資比：{short_ratio:.2f}%\n"
+        report += f"🔹 006208 券資比：{short_ratio:.2f}% ({'↑' if short_ratio_diff > 0 else '↓'}{abs(short_ratio_diff):.2f}%)\n"
+        report += f"🔹 籌碼情境：{chip_situation}\n"
         report += f"🔹 20MA量能倍數：{vol_ratio:.2f} 倍 ({'⚠️異常' if vol_ratio >= 1.5 else '平穩'})\n\n"
         report += "🔍 籌碼面專業解析\n"
         report += f"• {analysis_text}\n"
