@@ -78,10 +78,13 @@ def generate_report():
         m_006208_now = df_m_006208.iloc[-1]['MarginPurchaseTodayBalance']
         m_006208_diff = m_006208_now - df_m_006208.iloc[-2]['MarginPurchaseTodayBalance']
         
-        # TaiwanStockSecuritiesLending 欄位名稱可能為 SBL_Balance 或其他
-        _sbl_col = next((c for c in ('SBL_Balance', 'balance', 'ShortSaleTodayBalance') if not df_sbl.empty and c in df_sbl.columns), None)
-        sbl_now = int(df_sbl.iloc[-1][_sbl_col]) if _sbl_col else 0
-        sbl_diff = (sbl_now - int(df_sbl.iloc[-2][_sbl_col])) if (_sbl_col and len(df_sbl) > 1) else 0
+        if df_sbl.empty:
+            raise ValueError("TaiwanStockSecuritiesLending 006208 資料為空")
+        _sbl_col = next((c for c in ('SBL_Balance', 'balance', 'ShortSaleTodayBalance') if c in df_sbl.columns), None)
+        if _sbl_col is None:
+            raise ValueError(f"TaiwanStockSecuritiesLending 找不到借券餘額欄位，可用欄位: {list(df_sbl.columns)}")
+        sbl_now = int(df_sbl.iloc[-1][_sbl_col])
+        sbl_diff = (sbl_now - int(df_sbl.iloc[-2][_sbl_col])) if len(df_sbl) > 1 else 0
 
         # --- 新增：券資比與量能判定邏輯 ---
         # 計算券資比
