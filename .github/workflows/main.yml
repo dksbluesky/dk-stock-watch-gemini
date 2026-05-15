@@ -1,26 +1,21 @@
 name: Daily Stock Reporter
-
 on:
   schedule:
     # 台灣時間 15:30 = UTC 07:30
     - cron: '30 7 * * 1-5'
   workflow_dispatch: 
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4  # 這裡從 v3 升級到 v4
-
+        uses: actions/checkout@v4
       - name: Set up Python
-        uses: actions/setup-python@v5  # 這裡從 v4 升級到 v5
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-
       - name: Install dependencies
         run: pip install pandas requests
-
       - name: Run script
         env:
           FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
