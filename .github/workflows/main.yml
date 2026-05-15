@@ -2,8 +2,8 @@ name: Daily Stock Reporter
 
 on:
   schedule:
-    # 台灣時間 16:30 = UTC 08:30
-    - cron: '30 8 * * 1-5'
+    # 台灣時間 15:30 = UTC 07:30
+    - cron: '30 7 * * 1-5'
   workflow_dispatch: 
 
 jobs:
