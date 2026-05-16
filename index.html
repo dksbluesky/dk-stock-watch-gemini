@@ -172,61 +172,22 @@
     .stock-item-info { font-size: 0.9rem; }
     .stock-item-code { font-weight: 700; margin-right: 8px; }
     .stock-item-name { color: var(--muted); font-size: 0.82rem; }
-    .btn-remove {
-      background: rgba(239,68,68,.12);
-      color: var(--red);
-      border: none;
-      border-radius: 7px;
-      padding: 5px 12px;
-      font-size: 0.8rem;
-      cursor: pointer;
-      flex-shrink: 0;
-    }
-    .btn-remove:hover { background: rgba(239,68,68,.25); }
-
-    .add-form {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .add-form input {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 9px 12px;
-      color: var(--text);
-      font-size: 0.88rem;
-      outline: none;
-      transition: border-color 0.15s;
-    }
-    .add-form input:focus { border-color: var(--blue); }
-    .input-code { width: 100px; }
-    .input-name { flex: 1; min-width: 120px; }
-    .btn-add {
+    .btn-edit {
+      display: block;
+      width: 100%;
       background: var(--blue);
       color: #fff;
       border: none;
-      border-radius: 8px;
-      padding: 9px 18px;
-      font-size: 0.88rem;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    .btn-add:hover { background: #2563eb; }
-
-    .btn-download {
-      width: 100%;
-      background: var(--surface);
-      border: 1px solid var(--blue);
-      color: var(--blue);
       border-radius: 10px;
-      padding: 12px;
+      padding: 13px;
       font-size: 0.9rem;
       font-weight: 600;
       cursor: pointer;
+      text-align: center;
+      text-decoration: none;
       margin-top: 4px;
     }
-    .btn-download:hover { background: rgba(59,130,246,.1); }
+    .btn-edit:hover { background: #2563eb; }
 
     .info-box {
       background: rgba(59,130,246,.08);
@@ -410,78 +371,41 @@ function renderStock(s_) {
 }
 
 /* ── Manage page ── */
-let localWatchlist = [];
-
-function saveLocal() {
-  localStorage.setItem('watchlist', JSON.stringify(localWatchlist));
-}
-
-function renderManage() {
-  const listHTML = localWatchlist.map((s, i) => `
+function renderManage(stocks) {
+  const listHTML = stocks.map(s => `
     <div class="stock-item">
       <div class="stock-item-info">
         <span class="stock-item-code">${s.code}</span>
         <span class="stock-item-name">${s.name}</span>
       </div>
-      <button class="btn-remove" onclick="removeStock(${i})">移除</button>
+      <span class="badge ${s.ok ? 'bg-green' : 'bg-red'}">${s.ok ? '正常' : '異常'}</span>
     </div>`).join('');
 
   return `
     <div class="manage-section">
       <h2>目前監控清單</h2>
-      <div class="stock-list" id="stock-list">
+      <div class="stock-list">
         ${listHTML || '<div style="color:var(--muted);font-size:.85rem">尚無股票</div>'}
       </div>
     </div>
-
     <div class="manage-section">
-      <h2>新增股票</h2>
-      <div class="add-form">
-        <input class="input-code" id="inp-code" type="text" placeholder="股票代號" maxlength="8" />
-        <input class="input-name" id="inp-name" type="text" placeholder="股票名稱（選填）" />
-        <button class="btn-add" onclick="addStock()">新增</button>
-      </div>
-    </div>
-
-    <div class="manage-section">
-      <h2>儲存變更</h2>
+      <h2>新增 / 移除股票</h2>
       <div class="info-box" style="margin-bottom:12px">
-        <strong>使用方式：</strong><br>
-        1. 新增或移除股票後，點下方「下載 watchlist.json」<br>
-        2. 將下載的檔案上傳到 GitHub repo（覆蓋原檔）<br>
-        3. 下次 GitHub Actions 執行時，即會自動包含新股票
+        直接編輯 GitHub 上的 <strong>watchlist.json</strong>，即可新增或移除監控股票。<br>
+        格式範例：<br>
+        <code style="color:var(--text);font-size:.82rem">
+          [<br>
+          &nbsp;&nbsp;{"code": "006208", "name": "富邦台50"},<br>
+          &nbsp;&nbsp;{"code": "2330", "name": "台積電"}<br>
+          ]
+        </code>
       </div>
-      <button class="btn-download" onclick="downloadWatchlist()">⬇️ 下載 watchlist.json</button>
+      <a class="btn-edit"
+         href="https://github.com/dksbluesky/dk-stock-watch-gemini/edit/main/watchlist.json"
+         target="_blank">
+        ✏️ 在 GitHub 上編輯 watchlist.json
+      </a>
     </div>`;
-}
-
-function addStock() {
-  const code = document.getElementById('inp-code').value.trim();
-  const name = document.getElementById('inp-name').value.trim() || code;
-  if (!code) { alert('請輸入股票代號'); return; }
-  if (localWatchlist.find(s => s.code === code)) { alert(`${code} 已在清單中`); return; }
-  localWatchlist.push({ code, name });
-  saveLocal();
-  refreshManage();
-}
-
-function removeStock(i) {
-  localWatchlist.splice(i, 1);
-  saveLocal();
-  refreshManage();
-}
-
-function refreshManage() {
-  const manageIdx = 1 + (window._stockCount || 0); // market=0, stocks, manage=last
-  document.querySelectorAll('.page')[manageIdx].innerHTML = renderManage();
-}
-
-function downloadWatchlist() {
-  const blob = new Blob([JSON.stringify(localWatchlist, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'watchlist.json';
-  a.click();
 }
 
 /* ── Bootstrap ── */
@@ -503,15 +427,6 @@ fetchData().then(data => {
   const stocks = data.stocks || [];
   window._stockCount = stocks.length;
 
-  // Seed local watchlist from report + localStorage
-  const saved = localStorage.getItem('watchlist');
-  if (saved) {
-    localWatchlist = JSON.parse(saved);
-  } else {
-    localWatchlist = stocks.map(s => ({ code: s.code, name: s.name }));
-    saveLocal();
-  }
-
   // Build tabs
   const tabsEl  = document.getElementById('tabs');
   const pagesEl = document.getElementById('pages');
@@ -519,7 +434,7 @@ fetchData().then(data => {
   const tabDefs = [
     { label: '🌐 大盤', html: renderMarket(data.market) },
     ...stocks.map(s => ({ label: s.code, html: renderStock(s) })),
-    { label: '⚙️ 管理', html: renderManage() },
+    { label: '⚙️ 管理', html: renderManage(stocks) },
   ];
 
   tabDefs.forEach((t, i) => {
