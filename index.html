@@ -191,7 +191,9 @@
       const res = await fetch(url, { headers: { Accept: 'application/vnd.github.v3+json' }, cache: 'no-store' });
       if (!res.ok) throw new Error(`GitHub API ${res.status}`);
       const meta = await res.json();
-      const raw = atob(meta.content.replace(/\n/g, ''));
+      const binary = atob(meta.content.replace(/\n/g, ''));
+      const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+      const raw = new TextDecoder('utf-8').decode(bytes);
       return JSON.parse(raw);
     }
 
