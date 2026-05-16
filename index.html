@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>006208 盤後籌碼報告</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface2: #273349;
+      --border: #334155;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --blue: #3b82f6;
+      --green: #10b981;
+      --red: #ef4444;
+      --yellow: #f59e0b;
+      --purple: #a855f7;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      padding: 16px;
+    }
+    header {
+      text-align: center;
+      padding: 24px 16px 16px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+    header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: 0.02em; }
+    header .sub { color: var(--muted); font-size: 0.85rem; margin-top: 4px; }
+    header .date-badge {
+      display: inline-block;
+      margin-top: 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 0.82rem;
+      color: var(--blue);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .card.full { grid-column: 1 / -1; }
+    .card-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 8px;
+    }
+    .card-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .card-diff {
+      font-size: 0.82rem;
+      margin-top: 4px;
+      color: var(--muted);
+    }
+    .up { color: var(--green); }
+    .down { color: var(--red); }
+    .neutral { color: var(--muted); }
+
+    .situation-box {
+      background: var(--surface2);
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-size: 1rem;
+      line-height: 1.6;
+      margin-top: 4px;
+    }
+    .analysis-box {
+      background: var(--surface2);
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-size: 0.9rem;
+      line-height: 1.7;
+      margin-top: 4px;
+    }
+    .analysis-box p { margin-bottom: 6px; }
+    .analysis-box p:last-child { margin-bottom: 0; }
+
+    .vol-bar-wrap {
+      margin-top: 10px;
+      background: var(--surface2);
+      border-radius: 6px;
+      height: 8px;
+      overflow: hidden;
+    }
+    .vol-bar {
+      height: 100%;
+      border-radius: 6px;
+      background: var(--blue);
+      transition: width 0.6s ease;
+    }
+    .vol-bar.hot { background: var(--red); }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-top: 6px;
+    }
+    .badge-green { background: rgba(16,185,129,0.15); color: var(--green); }
+    .badge-red   { background: rgba(239,68,68,0.15);  color: var(--red); }
+    .badge-yellow{ background: rgba(245,158,11,0.15); color: var(--yellow); }
+    .badge-blue  { background: rgba(59,130,246,0.15); color: var(--blue); }
+
+    .spinner {
+      display: flex; justify-content: center; align-items: center;
+      height: 200px;
+    }
+    .spinner::after {
+      content: '';
+      width: 36px; height: 36px;
+      border: 4px solid var(--border);
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-box {
+      grid-column: 1 / -1;
+      background: rgba(239,68,68,0.1);
+      border: 1px solid var(--red);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      color: var(--red);
+    }
+
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.75rem;
+      margin-top: 28px;
+      padding-bottom: 16px;
+    }
+    footer a { color: var(--blue); text-decoration: none; }
+
+    @media (max-width: 480px) {
+      .card-value { font-size: 1.25rem; }
+      .grid { gap: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>📊 006208 盤後籌碼報告</h1>
+    <div class="sub">dk-stock-watch-gemini · 每日盤後自動更新</div>
+    <div class="date-badge" id="date-badge">載入中…</div>
+  </header>
+
+  <div id="root">
+    <div class="spinner"></div>
+  </div>
+
+  <footer>
+    資料來源：FinMind API &nbsp;|&nbsp;
+    <a href="https://github.com/dksbluesky/dk-stock-watch-gemini" target="_blank">GitHub</a>
+  </footer>
+
+  <script>
+    const REPO = 'dksbluesky/dk-stock-watch-gemini';
+    const FILE = 'data/report.json';
+
+    async function fetchData() {
+      const url = `https://api.github.com/repos/${REPO}/contents/${FILE}`;
+      const res = await fetch(url, { headers: { Accept: 'application/vnd.github.v3+json' }, cache: 'no-store' });
+      if (!res.ok) throw new Error(`GitHub API ${res.status}`);
+      const meta = await res.json();
+      const raw = atob(meta.content.replace(/\n/g, ''));
+      return JSON.parse(raw);
+    }
+
+    function sign(val) { return val > 0 ? '+' : ''; }
+    function colorClass(val) { return val > 0 ? 'up' : val < 0 ? 'down' : 'neutral'; }
+    function arrow(val) { return val > 0 ? '▲' : val < 0 ? '▼' : '―'; }
+
+    function render(d) {
+      document.getElementById('date-badge').textContent = `${d.date}  ·  更新於 ${d.generated}`;
+
+      // futures: negative net = net short → "空增" is bad direction
+      const futColor = d.futures_net < 0 ? 'down' : 'up';
+      const futDiffLabel = d.futures_diff < 0 ? '空增' : '空減';
+      const futDiffColor = d.futures_diff < 0 ? 'down' : 'up';
+
+      // price badge
+      const priceBadge = d.price_change > 0
+        ? `<span class="badge badge-green">▲ +${d.price_change.toFixed(2)}</span>`
+        : d.price_change < 0
+        ? `<span class="badge badge-red">▼ ${d.price_change.toFixed(2)}</span>`
+        : `<span class="badge badge-blue">持平</span>`;
+
+      // vol bar (cap at 3x for display)
+      const barPct = Math.min(d.vol_ratio / 3 * 100, 100).toFixed(1);
+      const barClass = d.vol_abnormal ? 'vol-bar hot' : 'vol-bar';
+      const volBadge = d.vol_abnormal
+        ? `<span class="badge badge-red">⚠️ 異常放量</span>`
+        : `<span class="badge badge-blue">量能平穩</span>`;
+
+      // chip ratio color
+      const ratioColor = colorClass(d.chip_ratio_diff_pct);
+
+      const html = `
+        <div class="grid">
+
+          <!-- 外資大台期貨 -->
+          <div class="card">
+            <div class="card-label">外資大台期貨</div>
+            <div class="card-value ${futColor}">${d.futures_net.toLocaleString()} 口</div>
+            <div class="card-diff">
+              <span class="${futDiffColor}">${futDiffLabel} ${Math.abs(d.futures_diff).toLocaleString()} 口</span>
+            </div>
+          </div>
+
+          <!-- 006208 股價 -->
+          <div class="card">
+            <div class="card-label">006208 收盤價</div>
+            <div class="card-value">${d.price_close.toFixed(2)}</div>
+            <div class="card-diff">${priceBadge}</div>
+          </div>
+
+          <!-- 大盤融資餘額 -->
+          <div class="card">
+            <div class="card-label">大盤融資餘額</div>
+            <div class="card-value">${d.margin_total_yi.toLocaleString('zh-TW', {minimumFractionDigits:2, maximumFractionDigits:2})} 億</div>
+            <div class="card-diff">
+              <span class="${colorClass(d.margin_total_diff_yi)}">
+                ${arrow(d.margin_total_diff_yi)} ${sign(d.margin_total_diff_yi)}${Math.abs(d.margin_total_diff_yi).toFixed(2)} 億
+              </span>
+              &nbsp;散戶${d.margin_total_sentiment}
+            </div>
+          </div>
+
+          <!-- 006208 融資 -->
+          <div class="card">
+            <div class="card-label">006208 融資餘額</div>
+            <div class="card-value">${d.margin_006208.toLocaleString()} 張</div>
+            <div class="card-diff">
+              <span class="${colorClass(d.margin_006208_diff)}">
+                ${arrow(d.margin_006208_diff)} ${sign(d.margin_006208_diff)}${Math.abs(d.margin_006208_diff).toLocaleString()} 張
+              </span>
+            </div>
+          </div>
+
+          <!-- 006208 借券 -->
+          <div class="card">
+            <div class="card-label">006208 借券餘額</div>
+            <div class="card-value">${d.short_sale_006208.toLocaleString()} 張</div>
+            <div class="card-diff">
+              <span class="${colorClass(d.short_sale_006208_diff)}">
+                ${arrow(d.short_sale_006208_diff)} ${sign(d.short_sale_006208_diff)}${Math.abs(d.short_sale_006208_diff).toLocaleString()} 張
+              </span>
+            </div>
+          </div>
+
+          <!-- 券資比 -->
+          <div class="card">
+            <div class="card-label">006208 券資比</div>
+            <div class="card-value ${ratioColor}">${d.chip_ratio_pct.toFixed(2)}%</div>
+            <div class="card-diff">
+              <span class="${ratioColor}">
+                ${d.chip_ratio_diff_pct > 0 ? '↑' : '↓'} ${Math.abs(d.chip_ratio_diff_pct).toFixed(2)}%
+              </span>
+            </div>
+          </div>
+
+          <!-- 籌碼情境 -->
+          <div class="card full">
+            <div class="card-label">籌碼情境判定</div>
+            <div class="situation-box">${d.chip_situation}</div>
+          </div>
+
+          <!-- 20MA 量能 -->
+          <div class="card full">
+            <div class="card-label">20MA 量能倍數</div>
+            <div class="card-value">${d.vol_ratio.toFixed(2)} 倍</div>
+            ${volBadge}
+            <div class="vol-bar-wrap">
+              <div class="${barClass}" style="width:${barPct}%"></div>
+            </div>
+          </div>
+
+          <!-- 專業解析 -->
+          <div class="card full">
+            <div class="card-label">🔍 籌碼面專業解析</div>
+            <div class="analysis-box">
+              <p>${d.vol_analysis}</p>
+              <p>• 大盤融資餘額變動 ${sign(d.margin_total_diff_yi)}${Math.abs(d.margin_total_diff_yi).toFixed(2)} 億，散戶目前${d.margin_total_sentiment}。</p>
+            </div>
+          </div>
+
+        </div>`;
+
+      document.getElementById('root').innerHTML = html;
+    }
+
+    function renderError(msg) {
+      document.getElementById('date-badge').textContent = '資料載入失敗';
+      document.getElementById('root').innerHTML = `
+        <div class="grid">
+          <div class="error-box">
+            ❌ 無法載入資料<br>
+            <small style="color:var(--muted);margin-top:6px;display:block">${msg}</small>
+            <small style="color:var(--muted);margin-top:4px;display:block">請稍後重新整理，或確認 GitHub Actions 是否已執行。</small>
+          </div>
+        </div>`;
+    }
+
+    fetchData().then(render).catch(e => renderError(e.message));
+  </script>
+</body>
+</html>

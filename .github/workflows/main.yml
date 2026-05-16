@@ -3,22 +3,36 @@ on:
   schedule:
     # 台灣時間 15:30 = UTC 07:30
     - cron: '30 7 * * 1-5'
-  workflow_dispatch: 
+  workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
+
       - name: Install dependencies
         run: pip install pandas requests
+
       - name: Run script
         env:
           FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python send_report.py
+
+      - name: Commit and push data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/report.json
+          git diff --staged --quiet || git commit -m "Update report data $(date -u +'%Y-%m-%d %H:%M UTC')"
+          git push

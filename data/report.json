@@ -1,0 +1,21 @@
+{
+  "generated": "尚未產生資料，請等待 GitHub Actions 執行",
+  "date": "--",
+  "futures_net": 0,
+  "futures_diff": 0,
+  "margin_total_yi": 0,
+  "margin_total_diff_yi": 0,
+  "margin_006208": 0,
+  "margin_006208_diff": 0,
+  "short_sale_006208": 0,
+  "short_sale_006208_diff": 0,
+  "chip_ratio_pct": 0,
+  "chip_ratio_diff_pct": 0,
+  "chip_situation": "⏳ 等待資料更新…",
+  "vol_ratio": 0,
+  "vol_abnormal": false,
+  "vol_analysis": "⏳ 等待資料更新…",
+  "price_close": 0,
+  "price_change": 0,
+  "margin_total_sentiment": "等待更新"
+}
