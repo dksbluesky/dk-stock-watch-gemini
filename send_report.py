@@ -4,11 +4,12 @@ import requests
 import pandas as pd
 from datetime import datetime, timedelta
 
+
 def get_finmind_data(dataset, data_id=None):
     url = "https://api.finmindtrade.com/api/v4/data"
     token = os.getenv("FINMIND_TOKEN")
     if not token:
-        raise ValueError("FINMIND_TOKEN 環境變數未設定，請在 GitHub Secrets 中新增此金鑰。")
+        raise ValueError("FINMIND_TOKEN 未設定")
     tw_now = datetime.utcnow() + timedelta(hours=8)
     start_date = (tw_now - timedelta(days=40)).strftime('%Y-%m-%d')
     params = {"dataset": dataset, "start_date": start_date, "token": token}
@@ -18,176 +19,211 @@ def get_finmind_data(dataset, data_id=None):
     resp.raise_for_status()
     data = resp.json()
     if data.get("status") != 200:
-        raise ValueError(f"FinMind API 錯誤 [{dataset}]: status={data.get('status')}, msg={data.get('msg', '未知錯誤')}")
-    df = pd.DataFrame(data.get("data", []))
-    return df
+        raise ValueError(f"FinMind [{dataset}] status={data.get('status')} msg={data.get('msg','')}")
+    return pd.DataFrame(data.get("data", []))
 
-def generate_data():
-    """Fetches and computes all data. Returns (report_text, data_dict)."""
-    tw_now = datetime.utcnow() + timedelta(hours=8)
 
-    # 1. 外資大台期貨
+def fetch_market(tw_now):
+    """外資大台期貨 + 大盤融資餘額 (market-wide)."""
+    # Futures
     df_fut = get_finmind_data("TaiwanFuturesInstitutionalInvestors", "TX")
-    if not df_fut.empty:
-        for col in ('institutional_investors', 'name'):
-            if col in df_fut.columns:
-                mask = df_fut[col].str.contains('外資', na=False)
-                if mask.any():
-                    df_fut = df_fut[mask]
-                break
-    if df_fut.empty:
-        raise ValueError("外資大台期貨資料為空，請確認 TaiwanFuturesInstitutionalInvestors data_id=TX 是否有效")
-
-    # 2. 大盤融資餘額
-    df_m_total = get_finmind_data("TaiwanStockTotalMarginPurchaseShortSale")
-
-    # 3. 006208 數據
-    df_m_006208 = get_finmind_data("TaiwanStockMarginPurchaseShortSale", "006208")
-    df_price = get_finmind_data("TaiwanStockPrice", "006208")
-
-    if len(df_fut) < 2 or len(df_m_total) < 2 or len(df_price) < 2:
-        raise ValueError(
-            f"資料筆數不足 (外資期貨:{len(df_fut)}, 大盤融資:{len(df_m_total)}, 股價:{len(df_price)}) "
-            f"[台灣時間 {tw_now.strftime('%Y-%m-%d %H:%M')}，星期{tw_now.weekday()+1}]"
-        )
-
-    # 外資大台淨口數
+    for col in ('institutional_investors', 'name'):
+        if col in df_fut.columns:
+            mask = df_fut[col].str.contains('外資', na=False)
+            if mask.any():
+                df_fut = df_fut[mask]
+            break
+    if len(df_fut) < 2:
+        raise ValueError("外資大台期貨資料不足")
     df_fut = df_fut.copy()
-    df_fut['open_interest_net'] = (
-        df_fut['long_open_interest_balance_volume'] - df_fut['short_open_interest_balance_volume']
-    )
-    fut_now = df_fut.iloc[-1]['open_interest_net']
-    fut_diff = fut_now - df_fut.iloc[-2]['open_interest_net']
+    df_fut['net'] = df_fut['long_open_interest_balance_volume'] - df_fut['short_open_interest_balance_volume']
+    fut_now  = int(df_fut.iloc[-1]['net'])
+    fut_diff = int(df_fut.iloc[-1]['net'] - df_fut.iloc[-2]['net'])
+    date_str = str(df_fut.iloc[-1]['date'])
 
-    def col_or_err(df, col, label):
-        if col not in df.columns:
-            raise ValueError(f"{label} 找不到欄位 '{col}'，可用欄位: {list(df.columns)}")
-        return col
+    # Total margin
+    df_mt = get_finmind_data("TaiwanStockTotalMarginPurchaseShortSale")
+    df_mt_m = df_mt[df_mt['name'] == 'MarginPurchaseMoney']
+    if df_mt_m.empty:
+        raise ValueError("找不到 MarginPurchaseMoney")
+    m_now  = round(df_mt_m.iloc[-1]['TodayBalance'] / 1e8, 2)
+    m_diff = round((df_mt_m.iloc[-1]['TodayBalance'] - df_mt_m.iloc[-1]['YesBalance']) / 1e8, 2)
 
-    # 大盤融資
-    df_m_total_margin = df_m_total[df_m_total['name'] == 'MarginPurchaseMoney']
-    if df_m_total_margin.empty:
-        raise ValueError(f"TaiwanStockTotalMarginPurchaseShortSale 找不到 MarginPurchaseMoney，name值: {df_m_total['name'].unique().tolist()}")
-    m_total_now = df_m_total_margin.iloc[-1]['TodayBalance'] / 100000000
-    m_total_diff = (df_m_total_margin.iloc[-1]['TodayBalance'] - df_m_total_margin.iloc[-1]['YesBalance']) / 100000000
-
-    # 006208 融資
-    col_or_err(df_m_006208, 'MarginPurchaseTodayBalance', 'TaiwanStockMarginPurchaseShortSale')
-    m_006208_now = df_m_006208.iloc[-1]['MarginPurchaseTodayBalance']
-    m_006208_diff = m_006208_now - df_m_006208.iloc[-2]['MarginPurchaseTodayBalance']
-
-    # 006208 借券
-    col_or_err(df_m_006208, 'ShortSaleTodayBalance', 'TaiwanStockMarginPurchaseShortSale')
-    sbl_now = int(df_m_006208.iloc[-1]['ShortSaleTodayBalance'])
-    sbl_diff = sbl_now - int(df_m_006208.iloc[-2]['ShortSaleTodayBalance'])
-
-    # 券資比
-    short_bal_now = df_m_006208.iloc[-1]['ShortSaleTodayBalance']
-    short_ratio = (short_bal_now / m_006208_now) * 100
-    short_bal_prev = df_m_006208.iloc[-2]['ShortSaleTodayBalance']
-    m_006208_prev = df_m_006208.iloc[-2]['MarginPurchaseTodayBalance']
-    short_ratio_prev = (short_bal_prev / m_006208_prev) * 100 if m_006208_prev else 0
-    short_ratio_diff = short_ratio - short_ratio_prev
-
-    # 情境判定
-    price_change = df_price.iloc[-1]['close'] - df_price.iloc[-2]['close']
-    ratio_up = short_ratio_diff > 0
-    price_up = price_change > 0
-    if ratio_up and price_up:
-        chip_situation = "🔥 軋空啟動：空方被迫買回，助長多頭氣勢。"
-    elif not ratio_up and not price_up:
-        chip_situation = "⚠️ 殺多盤：多方認賠殺出，融資斷頭壓力大。"
-    elif ratio_up and not price_up:
-        chip_situation = "🐻 空頭壓制：看空者眾且判斷正確，股價積弱不振。"
-    else:
-        chip_situation = "🏳️ 軋空結束：空方已投降補回，後續推升力道減弱。"
-
-    # 量能 20MA
-    df_price['vol_20ma'] = df_price['Trading_Volume'].rolling(20).mean()
-    curr_vol = df_price.iloc[-1]['Trading_Volume']
-    ma20_vol = df_price.iloc[-1]['vol_20ma']
-    vol_ratio = curr_vol / ma20_vol
-
-    if price_change > 0 and vol_ratio >= 1.5:
-        analysis_text = f"🚀 異常放量上漲 ({vol_ratio:.1f}倍量)，若券資比同步升高則具備軋空潛力。"
-    elif price_change < 0 and vol_ratio >= 1.5:
-        analysis_text = f"⚠️ 異常放量下跌 ({vol_ratio:.1f}倍量)，需注意籌碼鬆動風險。"
-    else:
-        analysis_text = "🛡️ 量能平穩，盤勢處於區間震盪。"
-
-    date_str = df_fut.iloc[-1]['date']
-
-    # Telegram text report
-    report = f"📊 {date_str} 盤後籌碼結算報告\n"
-    report += "--------------------------------\n"
-    report += f"1. 外資大台期貨：{int(fut_now):,} 口 ({'空增' if fut_diff < 0 else '空減'} {int(abs(fut_diff)):,} 口)\n"
-    report += f"2. 大盤融資餘額：{m_total_now:,.2f} 億 ({'增' if m_total_diff > 0 else '減'} {abs(m_total_diff):,.2f} 億)\n"
-    report += f"3. 006208 融資：{int(m_006208_now):,} 張 ({'增' if m_006208_diff > 0 else '減'} {int(abs(m_006208_diff)):,} 張)\n"
-    report += f"4. 006208 借券：{int(sbl_now):,} 張 ({'增' if sbl_diff > 0 else '減'} {int(abs(sbl_diff)):,} 張)\n"
-    report += "--------------------------------\n"
-    report += f"🔹 006208 券資比：{short_ratio:.2f}% ({'↑' if short_ratio_diff > 0 else '↓'}{abs(short_ratio_diff):.2f}%)\n"
-    report += f"🔹 籌碼情境：{chip_situation}\n"
-    report += f"🔹 20MA量能倍數：{vol_ratio:.2f} 倍 ({'⚠️異常' if vol_ratio >= 1.5 else '平穩'})\n\n"
-    report += "🔍 籌碼面專業解析\n"
-    report += f"• {analysis_text}\n"
-    report += f"• 融資餘額變動為 {m_total_diff:,.2f} 億，散戶目前{'轉向積極' if m_total_diff > 0 else '趨於保守'}。"
-
-    # Structured JSON data
-    data = {
-        "generated": tw_now.strftime('%Y-%m-%d %H:%M'),
+    return {
         "date": date_str,
-        "futures_net": int(fut_now),
-        "futures_diff": int(fut_diff),
-        "margin_total_yi": round(m_total_now, 2),
-        "margin_total_diff_yi": round(m_total_diff, 2),
-        "margin_006208": int(m_006208_now),
-        "margin_006208_diff": int(m_006208_diff),
-        "short_sale_006208": int(sbl_now),
-        "short_sale_006208_diff": int(sbl_diff),
-        "chip_ratio_pct": round(short_ratio, 2),
-        "chip_ratio_diff_pct": round(short_ratio_diff, 2),
-        "chip_situation": chip_situation,
-        "vol_ratio": round(float(vol_ratio), 2),
-        "vol_abnormal": bool(vol_ratio >= 1.5),
-        "vol_analysis": analysis_text,
-        "price_close": float(df_price.iloc[-1]['close']),
-        "price_change": float(price_change),
-        "margin_total_sentiment": "轉向積極" if m_total_diff > 0 else "趨於保守",
+        "futures_net": fut_now,
+        "futures_diff": fut_diff,
+        "margin_total_yi": m_now,
+        "margin_total_diff_yi": m_diff,
+        "margin_total_sentiment": "轉向積極" if m_diff > 0 else "趨於保守",
     }
 
-    return report, data
 
-def generate_report():
+def fetch_stock(code, name):
+    """Per-stock: margin, short sale, price, chip ratio, volume."""
     try:
-        report, _ = generate_data()
-        return report
+        df_m = get_finmind_data("TaiwanStockMarginPurchaseShortSale", code)
+        df_p = get_finmind_data("TaiwanStockPrice", code)
+
+        if len(df_m) < 2 or len(df_p) < 2:
+            raise ValueError(f"資料筆數不足 (margin:{len(df_m)}, price:{len(df_p)})")
+
+        # Margin
+        margin_now  = int(df_m.iloc[-1]['MarginPurchaseTodayBalance'])
+        margin_diff = int(margin_now - df_m.iloc[-2]['MarginPurchaseTodayBalance'])
+
+        # Short sale
+        sbl_now  = int(df_m.iloc[-1]['ShortSaleTodayBalance'])
+        sbl_diff = int(sbl_now - df_m.iloc[-2]['ShortSaleTodayBalance'])
+
+        # Chip ratio
+        ratio_now  = (sbl_now / margin_now * 100) if margin_now else 0
+        sbl_prev   = float(df_m.iloc[-2]['ShortSaleTodayBalance'])
+        margin_prev = float(df_m.iloc[-2]['MarginPurchaseTodayBalance'])
+        ratio_prev = (sbl_prev / margin_prev * 100) if margin_prev else 0
+        ratio_diff = round(ratio_now - ratio_prev, 2)
+
+        # Price & situation
+        price_close  = float(df_p.iloc[-1]['close'])
+        price_change = round(price_close - float(df_p.iloc[-2]['close']), 2)
+        ratio_up = ratio_diff > 0
+        price_up = price_change > 0
+        if ratio_up and price_up:
+            situation = "🔥 軋空啟動：空方被迫買回，助長多頭氣勢。"
+        elif not ratio_up and not price_up:
+            situation = "⚠️ 殺多盤：多方認賠殺出，融資斷頭壓力大。"
+        elif ratio_up and not price_up:
+            situation = "🐻 空頭壓制：看空者眾且判斷正確，股價積弱不振。"
+        else:
+            situation = "🏳️ 軋空結束：空方已投降補回，後續推升力道減弱。"
+
+        # Volume
+        df_p = df_p.copy()
+        df_p['vol_20ma'] = df_p['Trading_Volume'].rolling(20).mean()
+        vol_ratio = float(df_p.iloc[-1]['Trading_Volume'] / df_p.iloc[-1]['vol_20ma'])
+        vol_abnormal = vol_ratio >= 1.5
+        if price_change > 0 and vol_abnormal:
+            vol_analysis = f"🚀 異常放量上漲 ({vol_ratio:.1f}倍量)，若券資比同步升高則具備軋空潛力。"
+        elif price_change < 0 and vol_abnormal:
+            vol_analysis = f"⚠️ 異常放量下跌 ({vol_ratio:.1f}倍量)，需注意籌碼鬆動風險。"
+        else:
+            vol_analysis = "🛡️ 量能平穩，盤勢處於區間震盪。"
+
+        return {
+            "code": code,
+            "name": name,
+            "ok": True,
+            "margin": margin_now,
+            "margin_diff": margin_diff,
+            "short_sale": sbl_now,
+            "short_sale_diff": sbl_diff,
+            "chip_ratio_pct": round(ratio_now, 2),
+            "chip_ratio_diff_pct": ratio_diff,
+            "chip_situation": situation,
+            "vol_ratio": round(vol_ratio, 2),
+            "vol_abnormal": vol_abnormal,
+            "vol_analysis": vol_analysis,
+            "price_close": price_close,
+            "price_change": price_change,
+        }
     except Exception as e:
-        return f"❌ 系統邏輯異常：{str(e)}"
+        return {"code": code, "name": name, "ok": False, "error": str(e)}
+
+
+def build_tg(market, stocks):
+    lines = []
+    lines.append(f"📊 {market['date']} 盤後籌碼結算報告")
+    lines.append("")
+    lines.append("🌐 大盤指標")
+    fut = market['futures_net']
+    fd  = market['futures_diff']
+    lines.append(f"• 外資大台期貨：{fut:,} 口 ({'空增' if fd < 0 else '空減'} {abs(fd):,} 口)")
+    m = market['margin_total_yi']
+    md = market['margin_total_diff_yi']
+    lines.append(f"• 大盤融資餘額：{m:,.2f} 億 ({'↑' if md > 0 else '↓'}{abs(md):.2f} 億) — 散戶{market['margin_total_sentiment']}")
+
+    for s in stocks:
+        lines.append("")
+        lines.append(f"────────────")
+        if not s.get('ok'):
+            lines.append(f"📌 {s['code']} {s['name']}")
+            lines.append(f"⚠️ 資料取得失敗：{s.get('error','未知錯誤')}")
+            continue
+        lines.append(f"📌 {s['code']} {s['name']}")
+        lines.append(f"• 收盤：{s['price_close']:.2f} ({'▲' if s['price_change']>0 else '▼'}{abs(s['price_change']):.2f})")
+        lines.append(f"• 融資：{s['margin']:,} 張 ({'↑' if s['margin_diff']>0 else '↓'}{abs(s['margin_diff']):,})｜借券：{s['short_sale']:,} 張 ({'↑' if s['short_sale_diff']>0 else '↓'}{abs(s['short_sale_diff']):,})")
+        lines.append(f"• 券資比：{s['chip_ratio_pct']:.2f}% ({'↑' if s['chip_ratio_diff_pct']>0 else '↓'}{abs(s['chip_ratio_diff_pct']):.2f}%)")
+        lines.append(f"• 情境：{s['chip_situation']}")
+        lines.append(f"• 量能：{s['vol_ratio']:.2f} 倍 ({'⚠️異常' if s['vol_abnormal'] else '平穩'})")
+
+    return "\n".join(lines)
+
 
 def send_tg(text):
-    bot_token = os.getenv("TELEGRAM_TOKEN")
+    token   = os.getenv("TELEGRAM_TOKEN")
     chat_id = os.getenv("TELEGRAM_CHAT_ID")
-    if not bot_token:
-        raise ValueError("TELEGRAM_TOKEN 未設定")
-    if not chat_id:
-        raise ValueError("TELEGRAM_CHAT_ID 未設定")
-    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-    resp = requests.post(url, data={"chat_id": chat_id, "text": text}, timeout=30)
-    print(f"[TG] status={resp.status_code}, body={resp.text[:200]}")
-    resp.raise_for_status()
+    if not token:  raise ValueError("TELEGRAM_TOKEN 未設定")
+    if not chat_id: raise ValueError("TELEGRAM_CHAT_ID 未設定")
+    # Split if > 4000 chars
+    chunks = [text[i:i+4000] for i in range(0, len(text), 4000)]
+    for chunk in chunks:
+        resp = requests.post(
+            f"https://api.telegram.org/bot{token}/sendMessage",
+            data={"chat_id": chat_id, "text": chunk},
+            timeout=30
+        )
+        print(f"[TG] status={resp.status_code}, body={resp.text[:200]}")
+        resp.raise_for_status()
+
 
 if __name__ == "__main__":
     import sys
+
+    tw_now = datetime.utcnow() + timedelta(hours=8)
+
+    # Load watchlist
     try:
-        report, data = generate_data()
-        os.makedirs("data", exist_ok=True)
-        with open("data/report.json", "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-        print("=== REPORT ===")
-        print(report)
-        print("==============")
+        with open("watchlist.json", "r", encoding="utf-8") as f:
+            watchlist = json.load(f)
+    except FileNotFoundError:
+        watchlist = [{"code": "006208", "name": "富邦台50"}]
+
+    print(f"[INFO] 監控股票：{[s['code'] for s in watchlist]}")
+
+    # Fetch data
+    try:
+        market = fetch_market(tw_now)
+    except Exception as e:
+        print(f"❌ 大盤資料錯誤：{e}")
+        sys.exit(1)
+
+    stocks = [fetch_stock(s["code"], s["name"]) for s in watchlist]
+
+    for s in stocks:
+        if s.get("ok"):
+            print(f"[OK] {s['code']} {s['name']}")
+        else:
+            print(f"[FAIL] {s['code']} {s['name']}: {s.get('error')}")
+
+    # Write JSON
+    data = {
+        "generated": tw_now.strftime('%Y-%m-%d %H:%M'),
+        "market": market,
+        "stocks": stocks,
+    }
+    os.makedirs("data", exist_ok=True)
+    with open("data/report.json", "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    print("[INFO] data/report.json 已寫入")
+
+    # Send TG
+    report = build_tg(market, stocks)
+    print("=== REPORT ===")
+    print(report)
+    print("==============")
+    try:
         send_tg(report)
         print("[TG] 訊息傳送成功")
     except Exception as e:
-        print(f"❌ 錯誤：{e}")
+        print(f"[TG] 傳送失敗：{e}")
         sys.exit(1)

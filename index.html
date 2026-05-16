@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>006208 盤後籌碼報告</title>
+  <title>盤後籌碼報告</title>
   <style>
     :root {
       --bg: #0f172a;
@@ -16,7 +16,6 @@
       --green: #10b981;
       --red: #ef4444;
       --yellow: #f59e0b;
-      --purple: #a855f7;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -24,33 +23,65 @@
       color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       min-height: 100vh;
-      padding: 16px;
-    }
-    header {
-      text-align: center;
-      padding: 24px 16px 16px;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 20px;
-    }
-    header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: 0.02em; }
-    header .sub { color: var(--muted); font-size: 0.85rem; margin-top: 4px; }
-    header .date-badge {
-      display: inline-block;
-      margin-top: 10px;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 4px 14px;
-      font-size: 0.82rem;
-      color: var(--blue);
     }
 
+    /* ── Header ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 16px 0;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .header-top h1 { font-size: 1.05rem; font-weight: 700; }
+    .updated { font-size: 0.75rem; color: var(--muted); }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      gap: 2px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-bottom: 0;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab {
+      flex-shrink: 0;
+      padding: 8px 14px;
+      border-radius: 8px 8px 0 0;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--muted);
+      border: 1px solid transparent;
+      border-bottom: none;
+      background: transparent;
+      transition: color 0.15s, background 0.15s;
+      user-select: none;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active {
+      color: var(--blue);
+      background: var(--bg);
+      border-color: var(--border);
+    }
+
+    /* ── Content ── */
+    .page { display: none; padding: 16px; max-width: 720px; margin: 0 auto; }
+    .page.active { display: block; }
+
+    /* ── Cards ── */
     .grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 12px;
-      max-width: 720px;
-      margin: 0 auto;
     }
     .card {
       background: var(--surface);
@@ -60,44 +91,28 @@
     }
     .card.full { grid-column: 1 / -1; }
     .card-label {
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       color: var(--muted);
       text-transform: uppercase;
       letter-spacing: 0.06em;
       margin-bottom: 8px;
     }
-    .card-value {
-      font-size: 1.5rem;
-      font-weight: 700;
-      line-height: 1.2;
-    }
-    .card-diff {
-      font-size: 0.82rem;
-      margin-top: 4px;
-      color: var(--muted);
-    }
-    .up { color: var(--green); }
-    .down { color: var(--red); }
+    .card-value { font-size: 1.45rem; font-weight: 700; line-height: 1.2; }
+    .card-diff  { font-size: 0.82rem; margin-top: 5px; color: var(--muted); }
+    .up      { color: var(--green); }
+    .down    { color: var(--red); }
     .neutral { color: var(--muted); }
 
-    .situation-box {
+    .box {
       background: var(--surface2);
       border-radius: 10px;
-      padding: 14px 16px;
-      font-size: 1rem;
-      line-height: 1.6;
+      padding: 13px 15px;
+      font-size: 0.92rem;
+      line-height: 1.65;
       margin-top: 4px;
     }
-    .analysis-box {
-      background: var(--surface2);
-      border-radius: 10px;
-      padding: 14px 16px;
-      font-size: 0.9rem;
-      line-height: 1.7;
-      margin-top: 4px;
-    }
-    .analysis-box p { margin-bottom: 6px; }
-    .analysis-box p:last-child { margin-bottom: 0; }
+    .box p { margin-bottom: 5px; }
+    .box p:last-child { margin-bottom: 0; }
 
     .vol-bar-wrap {
       margin-top: 10px;
@@ -106,233 +121,421 @@
       height: 8px;
       overflow: hidden;
     }
-    .vol-bar {
-      height: 100%;
-      border-radius: 6px;
-      background: var(--blue);
-      transition: width 0.6s ease;
-    }
+    .vol-bar { height: 100%; border-radius: 6px; background: var(--blue); }
     .vol-bar.hot { background: var(--red); }
 
     .badge {
       display: inline-block;
       padding: 2px 10px;
       border-radius: 12px;
-      font-size: 0.75rem;
+      font-size: 0.74rem;
       font-weight: 600;
-      margin-top: 6px;
+      margin-top: 5px;
     }
-    .badge-green { background: rgba(16,185,129,0.15); color: var(--green); }
-    .badge-red   { background: rgba(239,68,68,0.15);  color: var(--red); }
-    .badge-yellow{ background: rgba(245,158,11,0.15); color: var(--yellow); }
-    .badge-blue  { background: rgba(59,130,246,0.15); color: var(--blue); }
+    .bg-green  { background: rgba(16,185,129,.15); color: var(--green); }
+    .bg-red    { background: rgba(239,68,68,.15);  color: var(--red); }
+    .bg-yellow { background: rgba(245,158,11,.15); color: var(--yellow); }
+    .bg-blue   { background: rgba(59,130,246,.15); color: var(--blue); }
 
+    /* ── Error card ── */
+    .err-card {
+      grid-column: 1 / -1;
+      background: rgba(239,68,68,.08);
+      border: 1px solid var(--red);
+      border-radius: 12px;
+      padding: 18px;
+      color: var(--red);
+      text-align: center;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    /* ── Manage tab ── */
+    .manage-section { margin-bottom: 24px; }
+    .manage-section h2 {
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 12px;
+    }
+    .stock-list { display: flex; flex-direction: column; gap: 8px; }
+    .stock-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 11px 14px;
+    }
+    .stock-item-info { font-size: 0.9rem; }
+    .stock-item-code { font-weight: 700; margin-right: 8px; }
+    .stock-item-name { color: var(--muted); font-size: 0.82rem; }
+    .btn-remove {
+      background: rgba(239,68,68,.12);
+      color: var(--red);
+      border: none;
+      border-radius: 7px;
+      padding: 5px 12px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .btn-remove:hover { background: rgba(239,68,68,.25); }
+
+    .add-form {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .add-form input {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 12px;
+      color: var(--text);
+      font-size: 0.88rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .add-form input:focus { border-color: var(--blue); }
+    .input-code { width: 100px; }
+    .input-name { flex: 1; min-width: 120px; }
+    .btn-add {
+      background: var(--blue);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 18px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-add:hover { background: #2563eb; }
+
+    .btn-download {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--blue);
+      color: var(--blue);
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 4px;
+    }
+    .btn-download:hover { background: rgba(59,130,246,.1); }
+
+    .info-box {
+      background: rgba(59,130,246,.08);
+      border: 1px solid rgba(59,130,246,.3);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .info-box strong { color: var(--blue); }
+
+    /* ── Spinner ── */
     .spinner {
-      display: flex; justify-content: center; align-items: center;
-      height: 200px;
+      display: flex; justify-content: center; align-items: center; height: 200px;
     }
     .spinner::after {
       content: '';
-      width: 36px; height: 36px;
+      width: 34px; height: 34px;
       border: 4px solid var(--border);
       border-top-color: var(--blue);
       border-radius: 50%;
-      animation: spin 0.8s linear infinite;
+      animation: spin .8s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-
-    .error-box {
-      grid-column: 1 / -1;
-      background: rgba(239,68,68,0.1);
-      border: 1px solid var(--red);
-      border-radius: 12px;
-      padding: 20px;
-      text-align: center;
-      color: var(--red);
-    }
 
     footer {
       text-align: center;
       color: var(--muted);
-      font-size: 0.75rem;
-      margin-top: 28px;
-      padding-bottom: 16px;
+      font-size: 0.74rem;
+      padding: 20px 0 24px;
     }
     footer a { color: var(--blue); text-decoration: none; }
 
-    @media (max-width: 480px) {
-      .card-value { font-size: 1.25rem; }
-      .grid { gap: 10px; }
+    @media (max-width: 440px) {
+      .card-value { font-size: 1.2rem; }
+      .grid { gap: 9px; }
+      .tab { padding: 7px 10px; font-size: 0.78rem; }
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>📊 006208 盤後籌碼報告</h1>
-    <div class="sub">dk-stock-watch-gemini · 每日盤後自動更新</div>
-    <div class="date-badge" id="date-badge">載入中…</div>
-  </header>
 
-  <div id="root">
-    <div class="spinner"></div>
+<header>
+  <div class="header-top">
+    <h1>📊 盤後籌碼報告</h1>
+    <span class="updated" id="updated">載入中…</span>
   </div>
+  <div class="tabs" id="tabs"></div>
+</header>
 
-  <footer>
-    資料來源：FinMind API &nbsp;|&nbsp;
-    <a href="https://github.com/dksbluesky/dk-stock-watch-gemini" target="_blank">GitHub</a>
-  </footer>
+<div id="pages"></div>
 
-  <script>
-    const REPO = 'dksbluesky/dk-stock-watch-gemini';
-    const FILE = 'data/report.json';
+<footer>
+  資料來源：FinMind API &nbsp;|&nbsp;
+  <a href="https://github.com/dksbluesky/dk-stock-watch-gemini" target="_blank">GitHub</a>
+</footer>
 
-    async function fetchData() {
-      const url = `https://api.github.com/repos/${REPO}/contents/${FILE}`;
-      const res = await fetch(url, { headers: { Accept: 'application/vnd.github.v3+json' }, cache: 'no-store' });
-      if (!res.ok) throw new Error(`GitHub API ${res.status}`);
-      const meta = await res.json();
-      const binary = atob(meta.content.replace(/\n/g, ''));
-      const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
-      const raw = new TextDecoder('utf-8').decode(bytes);
-      return JSON.parse(raw);
-    }
+<script>
+const REPO = 'dksbluesky/dk-stock-watch-gemini';
+const FILE = 'data/report.json';
 
-    function sign(val) { return val > 0 ? '+' : ''; }
-    function colorClass(val) { return val > 0 ? 'up' : val < 0 ? 'down' : 'neutral'; }
-    function arrow(val) { return val > 0 ? '▲' : val < 0 ? '▼' : '―'; }
+/* ── helpers ── */
+const s  = v => v > 0 ? '+' : '';
+const cc = v => v > 0 ? 'up' : v < 0 ? 'down' : 'neutral';
+const ar = v => v > 0 ? '▲' : v < 0 ? '▼' : '―';
+const fmt = (v, d=2) => Math.abs(v).toLocaleString('zh-TW', {minimumFractionDigits:d, maximumFractionDigits:d});
 
-    function render(d) {
-      document.getElementById('date-badge').textContent = `${d.date}  ·  更新於 ${d.generated}`;
+async function fetchData() {
+  const res = await fetch(
+    `https://api.github.com/repos/${REPO}/contents/${FILE}`,
+    { headers: { Accept: 'application/vnd.github.v3+json' }, cache: 'no-store' }
+  );
+  if (!res.ok) throw new Error(`GitHub API ${res.status}`);
+  const meta = await res.json();
+  const binary = atob(meta.content.replace(/\n/g, ''));
+  const bytes  = Uint8Array.from(binary, c => c.charCodeAt(0));
+  return JSON.parse(new TextDecoder('utf-8').decode(bytes));
+}
 
-      // futures: negative net = net short → "空增" is bad direction
-      const futColor = d.futures_net < 0 ? 'down' : 'up';
-      const futDiffLabel = d.futures_diff < 0 ? '空增' : '空減';
-      const futDiffColor = d.futures_diff < 0 ? 'down' : 'up';
+/* ── Tab system ── */
+let activeTab = 0;
+function switchTab(i) {
+  activeTab = i;
+  document.querySelectorAll('.tab').forEach((t, idx) => t.classList.toggle('active', idx === i));
+  document.querySelectorAll('.page').forEach((p, idx) => p.classList.toggle('active', idx === i));
+}
 
-      // price badge
-      const priceBadge = d.price_change > 0
-        ? `<span class="badge badge-green">▲ +${d.price_change.toFixed(2)}</span>`
-        : d.price_change < 0
-        ? `<span class="badge badge-red">▼ ${d.price_change.toFixed(2)}</span>`
-        : `<span class="badge badge-blue">持平</span>`;
+/* ── Market page ── */
+function renderMarket(m) {
+  const futColor = m.futures_net < 0 ? 'down' : 'up';
+  const fdColor  = m.futures_diff < 0 ? 'down' : 'up';
+  const fdLabel  = m.futures_diff < 0 ? '空增' : '空減';
+  return `
+    <div class="grid">
+      <div class="card full">
+        <div class="card-label">外資大台期貨 淨口數</div>
+        <div class="card-value ${futColor}">${m.futures_net.toLocaleString()} 口</div>
+        <div class="card-diff">
+          <span class="${fdColor}">${fdLabel} ${Math.abs(m.futures_diff).toLocaleString()} 口</span>
+        </div>
+      </div>
+      <div class="card full">
+        <div class="card-label">大盤融資餘額</div>
+        <div class="card-value">${fmt(m.margin_total_yi)} 億</div>
+        <div class="card-diff">
+          <span class="${cc(m.margin_total_diff_yi)}">${ar(m.margin_total_diff_yi)} ${s(m.margin_total_diff_yi)}${fmt(m.margin_total_diff_yi)} 億</span>
+          &nbsp;散戶${m.margin_total_sentiment}
+        </div>
+      </div>
+    </div>`;
+}
 
-      // vol bar (cap at 3x for display)
-      const barPct = Math.min(d.vol_ratio / 3 * 100, 100).toFixed(1);
-      const barClass = d.vol_abnormal ? 'vol-bar hot' : 'vol-bar';
-      const volBadge = d.vol_abnormal
-        ? `<span class="badge badge-red">⚠️ 異常放量</span>`
-        : `<span class="badge badge-blue">量能平穩</span>`;
+/* ── Stock page ── */
+function renderStock(s_) {
+  if (!s_.ok) return `
+    <div class="grid">
+      <div class="err-card">⚠️ 資料取得失敗<br><small>${s_.error}</small></div>
+    </div>`;
 
-      // chip ratio color
-      const ratioColor = colorClass(d.chip_ratio_diff_pct);
+  const pBadge = s_.price_change > 0
+    ? `<span class="badge bg-green">▲ +${Math.abs(s_.price_change).toFixed(2)}</span>`
+    : s_.price_change < 0
+    ? `<span class="badge bg-red">▼ ${Math.abs(s_.price_change).toFixed(2)}</span>`
+    : `<span class="badge bg-blue">持平</span>`;
 
-      const html = `
-        <div class="grid">
+  const barPct = Math.min(s_.vol_ratio / 3 * 100, 100).toFixed(1);
+  const volBadge = s_.vol_abnormal
+    ? `<span class="badge bg-red">⚠️ 異常放量</span>`
+    : `<span class="badge bg-blue">量能平穩</span>`;
 
-          <!-- 外資大台期貨 -->
-          <div class="card">
-            <div class="card-label">外資大台期貨</div>
-            <div class="card-value ${futColor}">${d.futures_net.toLocaleString()} 口</div>
-            <div class="card-diff">
-              <span class="${futDiffColor}">${futDiffLabel} ${Math.abs(d.futures_diff).toLocaleString()} 口</span>
-            </div>
-          </div>
+  return `
+    <div class="grid">
+      <div class="card">
+        <div class="card-label">收盤價</div>
+        <div class="card-value">${s_.price_close.toFixed(2)}</div>
+        <div class="card-diff">${pBadge}</div>
+      </div>
+      <div class="card">
+        <div class="card-label">券資比</div>
+        <div class="card-value ${cc(s_.chip_ratio_diff_pct)}">${s_.chip_ratio_pct.toFixed(2)}%</div>
+        <div class="card-diff">
+          <span class="${cc(s_.chip_ratio_diff_pct)}">
+            ${s_.chip_ratio_diff_pct > 0 ? '↑' : '↓'} ${Math.abs(s_.chip_ratio_diff_pct).toFixed(2)}%
+          </span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label">融資餘額</div>
+        <div class="card-value">${s_.margin.toLocaleString()} 張</div>
+        <div class="card-diff">
+          <span class="${cc(s_.margin_diff)}">${ar(s_.margin_diff)} ${Math.abs(s_.margin_diff).toLocaleString()} 張</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label">借券餘額</div>
+        <div class="card-value">${s_.short_sale.toLocaleString()} 張</div>
+        <div class="card-diff">
+          <span class="${cc(s_.short_sale_diff)}">${ar(s_.short_sale_diff)} ${Math.abs(s_.short_sale_diff).toLocaleString()} 張</span>
+        </div>
+      </div>
+      <div class="card full">
+        <div class="card-label">籌碼情境判定</div>
+        <div class="box">${s_.chip_situation}</div>
+      </div>
+      <div class="card full">
+        <div class="card-label">20MA 量能倍數</div>
+        <div class="card-value">${s_.vol_ratio.toFixed(2)} 倍</div>
+        ${volBadge}
+        <div class="vol-bar-wrap">
+          <div class="${s_.vol_abnormal ? 'vol-bar hot' : 'vol-bar'}" style="width:${barPct}%"></div>
+        </div>
+      </div>
+      <div class="card full">
+        <div class="card-label">🔍 籌碼面專業解析</div>
+        <div class="box">
+          <p>${s_.vol_analysis}</p>
+        </div>
+      </div>
+    </div>`;
+}
 
-          <!-- 006208 股價 -->
-          <div class="card">
-            <div class="card-label">006208 收盤價</div>
-            <div class="card-value">${d.price_close.toFixed(2)}</div>
-            <div class="card-diff">${priceBadge}</div>
-          </div>
+/* ── Manage page ── */
+let localWatchlist = [];
 
-          <!-- 大盤融資餘額 -->
-          <div class="card">
-            <div class="card-label">大盤融資餘額</div>
-            <div class="card-value">${d.margin_total_yi.toLocaleString('zh-TW', {minimumFractionDigits:2, maximumFractionDigits:2})} 億</div>
-            <div class="card-diff">
-              <span class="${colorClass(d.margin_total_diff_yi)}">
-                ${arrow(d.margin_total_diff_yi)} ${sign(d.margin_total_diff_yi)}${Math.abs(d.margin_total_diff_yi).toFixed(2)} 億
-              </span>
-              &nbsp;散戶${d.margin_total_sentiment}
-            </div>
-          </div>
+function saveLocal() {
+  localStorage.setItem('watchlist', JSON.stringify(localWatchlist));
+}
 
-          <!-- 006208 融資 -->
-          <div class="card">
-            <div class="card-label">006208 融資餘額</div>
-            <div class="card-value">${d.margin_006208.toLocaleString()} 張</div>
-            <div class="card-diff">
-              <span class="${colorClass(d.margin_006208_diff)}">
-                ${arrow(d.margin_006208_diff)} ${sign(d.margin_006208_diff)}${Math.abs(d.margin_006208_diff).toLocaleString()} 張
-              </span>
-            </div>
-          </div>
+function renderManage() {
+  const listHTML = localWatchlist.map((s, i) => `
+    <div class="stock-item">
+      <div class="stock-item-info">
+        <span class="stock-item-code">${s.code}</span>
+        <span class="stock-item-name">${s.name}</span>
+      </div>
+      <button class="btn-remove" onclick="removeStock(${i})">移除</button>
+    </div>`).join('');
 
-          <!-- 006208 借券 -->
-          <div class="card">
-            <div class="card-label">006208 借券餘額</div>
-            <div class="card-value">${d.short_sale_006208.toLocaleString()} 張</div>
-            <div class="card-diff">
-              <span class="${colorClass(d.short_sale_006208_diff)}">
-                ${arrow(d.short_sale_006208_diff)} ${sign(d.short_sale_006208_diff)}${Math.abs(d.short_sale_006208_diff).toLocaleString()} 張
-              </span>
-            </div>
-          </div>
+  return `
+    <div class="manage-section">
+      <h2>目前監控清單</h2>
+      <div class="stock-list" id="stock-list">
+        ${listHTML || '<div style="color:var(--muted);font-size:.85rem">尚無股票</div>'}
+      </div>
+    </div>
 
-          <!-- 券資比 -->
-          <div class="card">
-            <div class="card-label">006208 券資比</div>
-            <div class="card-value ${ratioColor}">${d.chip_ratio_pct.toFixed(2)}%</div>
-            <div class="card-diff">
-              <span class="${ratioColor}">
-                ${d.chip_ratio_diff_pct > 0 ? '↑' : '↓'} ${Math.abs(d.chip_ratio_diff_pct).toFixed(2)}%
-              </span>
-            </div>
-          </div>
+    <div class="manage-section">
+      <h2>新增股票</h2>
+      <div class="add-form">
+        <input class="input-code" id="inp-code" type="text" placeholder="股票代號" maxlength="8" />
+        <input class="input-name" id="inp-name" type="text" placeholder="股票名稱（選填）" />
+        <button class="btn-add" onclick="addStock()">新增</button>
+      </div>
+    </div>
 
-          <!-- 籌碼情境 -->
-          <div class="card full">
-            <div class="card-label">籌碼情境判定</div>
-            <div class="situation-box">${d.chip_situation}</div>
-          </div>
+    <div class="manage-section">
+      <h2>儲存變更</h2>
+      <div class="info-box" style="margin-bottom:12px">
+        <strong>使用方式：</strong><br>
+        1. 新增或移除股票後，點下方「下載 watchlist.json」<br>
+        2. 將下載的檔案上傳到 GitHub repo（覆蓋原檔）<br>
+        3. 下次 GitHub Actions 執行時，即會自動包含新股票
+      </div>
+      <button class="btn-download" onclick="downloadWatchlist()">⬇️ 下載 watchlist.json</button>
+    </div>`;
+}
 
-          <!-- 20MA 量能 -->
-          <div class="card full">
-            <div class="card-label">20MA 量能倍數</div>
-            <div class="card-value">${d.vol_ratio.toFixed(2)} 倍</div>
-            ${volBadge}
-            <div class="vol-bar-wrap">
-              <div class="${barClass}" style="width:${barPct}%"></div>
-            </div>
-          </div>
+function addStock() {
+  const code = document.getElementById('inp-code').value.trim();
+  const name = document.getElementById('inp-name').value.trim() || code;
+  if (!code) { alert('請輸入股票代號'); return; }
+  if (localWatchlist.find(s => s.code === code)) { alert(`${code} 已在清單中`); return; }
+  localWatchlist.push({ code, name });
+  saveLocal();
+  refreshManage();
+}
 
-          <!-- 專業解析 -->
-          <div class="card full">
-            <div class="card-label">🔍 籌碼面專業解析</div>
-            <div class="analysis-box">
-              <p>${d.vol_analysis}</p>
-              <p>• 大盤融資餘額變動 ${sign(d.margin_total_diff_yi)}${Math.abs(d.margin_total_diff_yi).toFixed(2)} 億，散戶目前${d.margin_total_sentiment}。</p>
-            </div>
-          </div>
+function removeStock(i) {
+  localWatchlist.splice(i, 1);
+  saveLocal();
+  refreshManage();
+}
 
-        </div>`;
+function refreshManage() {
+  const manageIdx = 1 + (window._stockCount || 0); // market=0, stocks, manage=last
+  document.querySelectorAll('.page')[manageIdx].innerHTML = renderManage();
+}
 
-      document.getElementById('root').innerHTML = html;
-    }
+function downloadWatchlist() {
+  const blob = new Blob([JSON.stringify(localWatchlist, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'watchlist.json';
+  a.click();
+}
 
-    function renderError(msg) {
-      document.getElementById('date-badge').textContent = '資料載入失敗';
-      document.getElementById('root').innerHTML = `
-        <div class="grid">
-          <div class="error-box">
-            ❌ 無法載入資料<br>
-            <small style="color:var(--muted);margin-top:6px;display:block">${msg}</small>
-            <small style="color:var(--muted);margin-top:4px;display:block">請稍後重新整理，或確認 GitHub Actions 是否已執行。</small>
-          </div>
-        </div>`;
-    }
+/* ── Bootstrap ── */
+function renderError(msg) {
+  document.getElementById('updated').textContent = '載入失敗';
+  document.getElementById('tabs').innerHTML = '<div class="tab active">錯誤</div>';
+  document.getElementById('pages').innerHTML = `
+    <div class="page active" style="padding:16px;max-width:720px;margin:0 auto">
+      <div class="grid"><div class="err-card">❌ 無法載入資料<br>
+      <small style="color:var(--muted)">${msg}</small><br>
+      <small style="color:var(--muted)">請確認 GitHub Actions 是否已執行，或稍後重新整理。</small>
+      </div></div>
+    </div>`;
+}
 
-    fetchData().then(render).catch(e => renderError(e.message));
-  </script>
+fetchData().then(data => {
+  document.getElementById('updated').textContent = `更新：${data.generated}`;
+
+  const stocks = data.stocks || [];
+  window._stockCount = stocks.length;
+
+  // Seed local watchlist from report + localStorage
+  const saved = localStorage.getItem('watchlist');
+  if (saved) {
+    localWatchlist = JSON.parse(saved);
+  } else {
+    localWatchlist = stocks.map(s => ({ code: s.code, name: s.name }));
+    saveLocal();
+  }
+
+  // Build tabs
+  const tabsEl  = document.getElementById('tabs');
+  const pagesEl = document.getElementById('pages');
+
+  const tabDefs = [
+    { label: '🌐 大盤', html: renderMarket(data.market) },
+    ...stocks.map(s => ({ label: s.code, html: renderStock(s) })),
+    { label: '⚙️ 管理', html: renderManage() },
+  ];
+
+  tabDefs.forEach((t, i) => {
+    const tab = document.createElement('div');
+    tab.className = 'tab' + (i === 0 ? ' active' : '');
+    tab.textContent = t.label;
+    tab.onclick = () => switchTab(i);
+    tabsEl.appendChild(tab);
+
+    const page = document.createElement('div');
+    page.className = 'page' + (i === 0 ? ' active' : '');
+    page.innerHTML = t.html;
+    pagesEl.appendChild(page);
+  });
+
+}).catch(e => renderError(e.message));
+</script>
 </body>
 </html>
