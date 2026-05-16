@@ -1,19 +1,64 @@
 {
-  "generated": "尚未產生資料，請等待 GitHub Actions 執行",
+  "generated": "2026-05-16 17:56",
   "market": {
-    "date": "--",
-    "futures_net": 0,
+    "date": "2026-05-16",
+    "futures_net": -50963,
     "futures_diff": 0,
-    "margin_total_yi": 0,
-    "margin_total_diff_yi": 0,
-    "margin_total_sentiment": "等待更新"
+    "margin_total_yi": 4927.97,
+    "margin_total_diff_yi": -63.38,
+    "margin_total_sentiment": "趨於保守"
   },
   "stocks": [
     {
       "code": "006208",
       "name": "富邦台50",
-      "ok": false,
-      "error": "尚未產生資料，請等待 GitHub Actions 執行"
+      "ok": true,
+      "margin": 220,
+      "margin_diff": 13,
+      "short_sale": 32,
+      "short_sale_diff": 1,
+      "chip_ratio_pct": 14.55,
+      "chip_ratio_diff_pct": -0.43,
+      "chip_situation": "⚠️ 殺多盤：多方認賠殺出，融資斷頭壓力大。",
+      "vol_ratio": 0.91,
+      "vol_abnormal": false,
+      "vol_analysis": "🛡️ 量能平穩，盤勢處於區間震盪。",
+      "price_close": 220.4,
+      "price_change": -2.1
+    },
+    {
+      "code": "2330",
+      "name": "台積電",
+      "ok": true,
+      "margin": 26173,
+      "margin_diff": -374,
+      "short_sale": 119,
+      "short_sale_diff": 2,
+      "chip_ratio_pct": 0.45,
+      "chip_ratio_diff_pct": 0.01,
+      "chip_situation": "🐻 空頭壓制：看空者眾且判斷正確，股價積弱不振。",
+      "vol_ratio": 0.78,
+      "vol_abnormal": false,
+      "vol_analysis": "🛡️ 量能平穩，盤勢處於區間震盪。",
+      "price_close": 2265.0,
+      "price_change": -5.0
+    },
+    {
+      "code": "00878",
+      "name": "國泰高股息",
+      "ok": true,
+      "margin": 6049,
+      "margin_diff": 1161,
+      "short_sale": 0,
+      "short_sale_diff": 0,
+      "chip_ratio_pct": 0.0,
+      "chip_ratio_diff_pct": 0.0,
+      "chip_situation": "⚠️ 殺多盤：多方認賠殺出，融資斷頭壓力大。",
+      "vol_ratio": 1.26,
+      "vol_abnormal": false,
+      "vol_analysis": "🛡️ 量能平穩，盤勢處於區間震盪。",
+      "price_close": 27.9,
+      "price_change": -0.22
     }
   ]
 }
