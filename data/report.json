@@ -1,9 +1,9 @@
 {
-  "generated": "2026-06-01 21:11",
+  "generated": "2026-06-02 19:50",
   "market": {
-    "date": "2026-06-01",
-    "futures_net": -64673,
-    "futures_diff": -4023,
+    "date": "2026-06-02",
+    "futures_net": -67018,
+    "futures_diff": -2345,
     "margin_total_yi": 5657.79,
     "margin_total_diff_yi": 94.19,
     "margin_total_sentiment": "轉向積極"
@@ -19,12 +19,12 @@
       "short_sale_diff": -7,
       "chip_ratio_pct": 0.34,
       "chip_ratio_diff_pct": -0.04,
-      "chip_situation": "⚠️ 殺多盤：多方認賠殺出，融資斷頭壓力大。",
-      "vol_ratio": 1.46,
+      "chip_situation": "🏳️ 軋空結束：空方已投降補回，後續推升力道減弱。",
+      "vol_ratio": 0.98,
       "vol_abnormal": false,
       "vol_analysis": "🛡️ 量能平穩，盤勢處於區間震盪。",
-      "price_close": 2355.0,
-      "price_change": 0.0
+      "price_close": 2380.0,
+      "price_change": 25.0
     },
     {
       "code": "006208",
@@ -37,11 +37,11 @@
       "chip_ratio_pct": 18.06,
       "chip_ratio_diff_pct": -0.48,
       "chip_situation": "🏳️ 軋空結束：空方已投降補回，後續推升力道減弱。",
-      "vol_ratio": 0.94,
+      "vol_ratio": 0.61,
       "vol_abnormal": false,
       "vol_analysis": "🛡️ 量能平穩，盤勢處於區間震盪。",
-      "price_close": 243.9,
-      "price_change": 2.65
+      "price_close": 244.55,
+      "price_change": 0.65
     },
     {
       "code": "00878",
@@ -54,11 +54,11 @@
       "chip_ratio_pct": 3.61,
       "chip_ratio_diff_pct": 0.89,
       "chip_situation": "🔥 軋空啟動：空方被迫買回，助長多頭氣勢。",
-      "vol_ratio": 1.07,
+      "vol_ratio": 1.14,
       "vol_abnormal": false,
       "vol_analysis": "🛡️ 量能平穩，盤勢處於區間震盪。",
-      "price_close": 31.99,
-      "price_change": 1.23
+      "price_close": 32.49,
+      "price_change": 0.5
     },
     {
       "code": "00981A",
@@ -70,12 +70,12 @@
       "short_sale_diff": 264,
       "chip_ratio_pct": 2.1,
       "chip_ratio_diff_pct": 0.22,
-      "chip_situation": "🔥 軋空啟動：空方被迫買回，助長多頭氣勢。",
-      "vol_ratio": 0.69,
+      "chip_situation": "🐻 空頭壓制：看空者眾且判斷正確，股價積弱不振。",
+      "vol_ratio": 0.89,
       "vol_abnormal": false,
       "vol_analysis": "🛡️ 量能平穩，盤勢處於區間震盪。",
-      "price_close": 31.7,
-      "price_change": 0.16
+      "price_close": 31.33,
+      "price_change": -0.37
     }
   ]
 }
