@@ -1,5 +1,5 @@
 {
-  "generated": "2026-06-03 16:42",
+  "generated": "2026-06-03 20:20",
   "market": {
     "date": "2026-06-03",
     "futures_net": -66772,
@@ -20,7 +20,7 @@
       "chip_ratio_pct": 0.31,
       "chip_ratio_diff_pct": -0.03,
       "chip_situation": "🏳️ 軋空結束：空方已投降補回，後續推升力道減弱。",
-      "vol_ratio": 0.58,
+      "vol_ratio": 0.7,
       "vol_abnormal": false,
       "vol_analysis": "🛡️ 量能平穩，盤勢處於區間震盪。",
       "price_close": 2425.0,
