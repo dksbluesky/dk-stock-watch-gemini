@@ -1,9 +1,9 @@
 {
-  "generated": "2026-06-04 20:53",
+  "generated": "2026-06-05 18:58",
   "market": {
-    "date": "2026-06-04",
-    "futures_net": -69476,
-    "futures_diff": -2704,
+    "date": "2026-06-05",
+    "futures_net": -69146,
+    "futures_diff": 330,
     "margin_total_yi": 5726.36,
     "margin_total_diff_yi": 42.41,
     "margin_total_sentiment": "轉向積極"
@@ -20,11 +20,11 @@
       "chip_ratio_pct": 0.3,
       "chip_ratio_diff_pct": -0.06,
       "chip_situation": "⚠️ 殺多盤：多方認賠殺出，融資斷頭壓力大。",
-      "vol_ratio": 0.78,
+      "vol_ratio": 1.03,
       "vol_abnormal": false,
       "vol_analysis": "🛡️ 量能平穩，盤勢處於區間震盪。",
-      "price_close": 2385.0,
-      "price_change": -40.0
+      "price_close": 2365.0,
+      "price_change": -20.0
     },
     {
       "code": "006208",
@@ -37,11 +37,11 @@
       "chip_ratio_pct": 13.68,
       "chip_ratio_diff_pct": -1.34,
       "chip_situation": "⚠️ 殺多盤：多方認賠殺出，融資斷頭壓力大。",
-      "vol_ratio": 0.9,
+      "vol_ratio": 1.09,
       "vol_abnormal": false,
       "vol_analysis": "🛡️ 量能平穩，盤勢處於區間震盪。",
-      "price_close": 245.95,
-      "price_change": -2.85
+      "price_close": 241.05,
+      "price_change": -4.9
     },
     {
       "code": "00878",
@@ -54,11 +54,11 @@
       "chip_ratio_pct": 1.65,
       "chip_ratio_diff_pct": -0.16,
       "chip_situation": "⚠️ 殺多盤：多方認賠殺出，融資斷頭壓力大。",
-      "vol_ratio": 0.81,
+      "vol_ratio": 1.33,
       "vol_abnormal": false,
       "vol_analysis": "🛡️ 量能平穩，盤勢處於區間震盪。",
-      "price_close": 32.68,
-      "price_change": -0.62
+      "price_close": 32.32,
+      "price_change": -0.36
     }
   ]
 }
