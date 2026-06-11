@@ -1,64 +1,53 @@
 {
-  "generated": "2026-06-10 19:09",
+  "generated": "2026-06-11 19:55",
   "market": {
-    "date": "2026-06-10",
-    "futures_net": -61949,
-    "futures_diff": -78,
-    "margin_total_yi": 5638.77,
-    "margin_total_diff_yi": 128.65,
-    "margin_total_sentiment": "轉向積極"
+    "date": "2026-06-11",
+    "futures_net": -63168,
+    "futures_diff": -1219,
+    "margin_total_yi": 5468.12,
+    "margin_total_diff_yi": -170.65,
+    "margin_total_sentiment": "趨於保守"
   },
   "stocks": [
     {
       "code": "2330",
       "name": "台積電",
       "ok": true,
-      "margin": 28350,
-      "margin_diff": 747,
+      "margin": 28168,
+      "margin_diff": -182,
       "short_sale": 0,
       "short_sale_diff": 0,
       "chip_ratio_pct": 0.0,
       "chip_ratio_diff_pct": 0.0,
       "chip_situation": "⚠️ 殺多盤：多方認賠殺出，融資斷頭壓力大。",
-      "vol_ratio": 1.28,
+      "vol_ratio": 1.09,
       "vol_abnormal": false,
       "vol_analysis": "🛡️ 量能平穩，盤勢處於區間震盪。",
-      "price_close": 2255.0,
-      "price_change": -50.0
+      "price_close": 2250.0,
+      "price_change": -5.0
     },
     {
       "code": "006208",
       "name": "富邦台50",
-      "ok": true,
-      "margin": 241,
-      "margin_diff": 23,
-      "short_sale": 26,
-      "short_sale_diff": 0,
-      "chip_ratio_pct": 10.79,
-      "chip_ratio_diff_pct": -1.14,
-      "chip_situation": "⚠️ 殺多盤：多方認賠殺出，融資斷頭壓力大。",
-      "vol_ratio": 1.14,
-      "vol_abnormal": false,
-      "vol_analysis": "🛡️ 量能平穩，盤勢處於區間震盪。",
-      "price_close": 232.05,
-      "price_change": -7.5
+      "ok": false,
+      "error": "HTTPSConnectionPool(host='api.finmindtrade.com', port=443): Read timed out. (read timeout=30)"
     },
     {
       "code": "00878",
       "name": "國泰高股息",
       "ok": true,
-      "margin": 4499,
-      "margin_diff": 378,
-      "short_sale": 21,
-      "short_sale_diff": 6,
-      "chip_ratio_pct": 0.47,
-      "chip_ratio_diff_pct": 0.1,
+      "margin": 4109,
+      "margin_diff": -390,
+      "short_sale": 30,
+      "short_sale_diff": 9,
+      "chip_ratio_pct": 0.73,
+      "chip_ratio_diff_pct": 0.26,
       "chip_situation": "🐻 空頭壓制：看空者眾且判斷正確，股價積弱不振。",
-      "vol_ratio": 0.92,
+      "vol_ratio": 0.6,
       "vol_abnormal": false,
       "vol_analysis": "🛡️ 量能平穩，盤勢處於區間震盪。",
       "price_close": 31.6,
-      "price_change": -0.71
+      "price_change": 0.0
     }
   ]
 }
