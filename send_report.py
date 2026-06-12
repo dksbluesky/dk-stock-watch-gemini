@@ -68,10 +68,14 @@ def fetch_stock(code, name):
         if len(df_m) < 2 or len(df_p) < 2:
             raise ValueError(f"資料筆數不足 (margin:{len(df_m)}, price:{len(df_p)})")
 
+        # 券資比/融資/借券 data is the laggiest dataset (often T-1 vs today's
+        # price). The whole card represents a single "as of" snapshot, so
+        # align price/volume to this date rather than the latest price.
+        as_of_date = str(df_m.iloc[-1]['date'])
+
         # Margin
         margin_now  = int(df_m.iloc[-1]['MarginPurchaseTodayBalance'])
         margin_diff = int(margin_now - df_m.iloc[-2]['MarginPurchaseTodayBalance'])
-        margin_date = str(df_m.iloc[-1]['date'])
 
         # Short sale
         sbl_now  = int(df_m.iloc[-1]['ShortSaleTodayBalance'])
@@ -84,23 +88,20 @@ def fetch_stock(code, name):
         ratio_prev = (sbl_prev / margin_prev * 100) if margin_prev else 0
         ratio_diff = round(ratio_now - ratio_prev, 2)
 
-        # Latest price (for display)
-        price_close  = float(df_p.iloc[-1]['close'])
-        price_change = round(price_close - float(df_p.iloc[-2]['close']), 2)
-
-        # 籌碼情境判定 must compare 券資比 and 股價 movement on the SAME date.
-        # 券資比 data (margin_date) often lags the latest price by 1 day,
-        # so find price movement on margin_date itself rather than today's.
+        # Price & volume aligned to as_of_date (same date as 券資比 data)
         df_p_sorted = df_p.sort_values('date').reset_index(drop=True)
-        match_idx = df_p_sorted.index[df_p_sorted['date'] == margin_date]
-        if len(match_idx) and match_idx[0] > 0:
-            i = match_idx[0]
-            situation_price_change = round(float(df_p_sorted.iloc[i]['close'] - df_p_sorted.iloc[i-1]['close']), 2)
-        else:
-            situation_price_change = price_change
+        match_idx = df_p_sorted.index[df_p_sorted['date'] == as_of_date]
+        if not len(match_idx):
+            raise ValueError(f"找不到 {as_of_date} 的價格資料")
+        i = match_idx[0]
+        if i == 0:
+            raise ValueError(f"{as_of_date} 無前一日價格資料")
+
+        price_close  = float(df_p_sorted.iloc[i]['close'])
+        price_change = round(price_close - float(df_p_sorted.iloc[i-1]['close']), 2)
 
         ratio_up = ratio_diff > 0
-        price_up = situation_price_change > 0
+        price_up = price_change > 0
         if ratio_up and price_up:
             situation = "🔥 軋空啟動：空方被迫買回，助長多頭氣勢。"
         elif not ratio_up and not price_up:
@@ -110,10 +111,9 @@ def fetch_stock(code, name):
         else:
             situation = "🏳️ 軋空結束：空方已投降補回，後續推升力道減弱。"
 
-        # Volume
-        df_p = df_p.copy()
-        df_p['vol_20ma'] = df_p['Trading_Volume'].rolling(20).mean()
-        vol_ratio = float(df_p.iloc[-1]['Trading_Volume'] / df_p.iloc[-1]['vol_20ma'])
+        # Volume (20MA computed up to and including as_of_date)
+        df_p_sorted['vol_20ma'] = df_p_sorted['Trading_Volume'].rolling(20).mean()
+        vol_ratio = float(df_p_sorted.iloc[i]['Trading_Volume'] / df_p_sorted.iloc[i]['vol_20ma'])
         vol_abnormal = vol_ratio >= 1.5
         if price_change > 0 and vol_abnormal:
             vol_analysis = f"🚀 異常放量上漲 ({vol_ratio:.1f}倍量)，若券資比同步升高則具備軋空潛力。"
@@ -126,6 +126,7 @@ def fetch_stock(code, name):
             "code": code,
             "name": name,
             "ok": True,
+            "as_of_date": as_of_date,
             "margin": margin_now,
             "margin_diff": margin_diff,
             "short_sale": sbl_now,
@@ -133,7 +134,6 @@ def fetch_stock(code, name):
             "chip_ratio_pct": round(ratio_now, 2),
             "chip_ratio_diff_pct": ratio_diff,
             "chip_situation": situation,
-            "chip_situation_date": margin_date,
             "vol_ratio": round(vol_ratio, 2),
             "vol_abnormal": vol_abnormal,
             "vol_analysis": vol_analysis,
@@ -163,11 +163,11 @@ def build_tg(market, stocks):
             lines.append(f"📌 {s['code']} {s['name']}")
             lines.append(f"⚠️ 資料取得失敗：{s.get('error','未知錯誤')}")
             continue
-        lines.append(f"📌 {s['code']} {s['name']}")
+        lines.append(f"📌 {s['code']} {s['name']}（資料日期：{s['as_of_date']}）")
         lines.append(f"• 收盤：{s['price_close']:.2f} ({'▲' if s['price_change']>0 else '▼'}{abs(s['price_change']):.2f})")
         lines.append(f"• 融資：{s['margin']:,} 張 ({'↑' if s['margin_diff']>0 else '↓'}{abs(s['margin_diff']):,})｜借券：{s['short_sale']:,} 張 ({'↑' if s['short_sale_diff']>0 else '↓'}{abs(s['short_sale_diff']):,})")
         lines.append(f"• 券資比：{s['chip_ratio_pct']:.2f}% ({'↑' if s['chip_ratio_diff_pct']>0 else '↓'}{abs(s['chip_ratio_diff_pct']):.2f}%)")
-        lines.append(f"• 情境（{s['chip_situation_date']}）：{s['chip_situation']}")
+        lines.append(f"• 情境：{s['chip_situation']}")
         lines.append(f"• 量能：{s['vol_ratio']:.2f} 倍 ({'⚠️異常' if s['vol_abnormal'] else '平穩'})")
 
     return "\n".join(lines)

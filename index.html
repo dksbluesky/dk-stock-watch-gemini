@@ -97,11 +97,13 @@
       letter-spacing: 0.06em;
       margin-bottom: 8px;
     }
-    .as-of {
-      text-transform: none;
-      letter-spacing: normal;
-      font-size: 0.7rem;
-      opacity: 0.8;
+    .as-of-banner {
+      font-size: 0.78rem;
+      color: var(--muted);
+      background: var(--surface2);
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin-bottom: 12px;
     }
     .card-value { font-size: 1.45rem; font-weight: 700; line-height: 1.2; }
     .card-diff  { font-size: 0.82rem; margin-top: 5px; color: var(--muted); }
@@ -381,6 +383,7 @@ function renderStock(s_) {
     : `<span class="badge bg-blue">量能平穩</span>`;
 
   return `
+    ${s_.as_of_date ? `<div class="as-of-banner">資料日期：${s_.as_of_date}（受券資比資料更新進度影響）</div>` : ''}
     <div class="grid">
       <div class="card">
         <div class="card-label">收盤價</div>
@@ -411,7 +414,7 @@ function renderStock(s_) {
         </div>
       </div>
       <div class="card full">
-        <div class="card-label">籌碼情境判定${s_.chip_situation_date ? ` <span class="as-of">（以 ${s_.chip_situation_date} 券資比/股價變動為準）</span>` : ''}</div>
+        <div class="card-label">籌碼情境判定</div>
         <div class="box">${s_.chip_situation}</div>
       </div>
       <div class="card full">
