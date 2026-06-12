@@ -97,6 +97,12 @@
       letter-spacing: 0.06em;
       margin-bottom: 8px;
     }
+    .as-of {
+      text-transform: none;
+      letter-spacing: normal;
+      font-size: 0.7rem;
+      opacity: 0.8;
+    }
     .card-value { font-size: 1.45rem; font-weight: 700; line-height: 1.2; }
     .card-diff  { font-size: 0.82rem; margin-top: 5px; color: var(--muted); }
     .up      { color: var(--green); }
@@ -405,7 +411,7 @@ function renderStock(s_) {
         </div>
       </div>
       <div class="card full">
-        <div class="card-label">籌碼情境判定</div>
+        <div class="card-label">籌碼情境判定${s_.chip_situation_date ? ` <span class="as-of">（以 ${s_.chip_situation_date} 券資比/股價變動為準）</span>` : ''}</div>
         <div class="box">${s_.chip_situation}</div>
       </div>
       <div class="card full">
