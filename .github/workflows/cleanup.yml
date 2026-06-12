@@ -2,7 +2,7 @@ name: Cleanup old workflow runs
 
 on:
   schedule:
-    - cron: '0 0 * * 0'  # 每週日午夜跑一次
+    - cron: '0 1 * * *'  # 每天 UTC 01:00（每個 workflow 各保留最新 3 筆）
   workflow_dispatch:
 
 jobs:
@@ -14,5 +14,5 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ github.repository }}
-          retain_days: 5
+          retain_days: 1
           keep_minimum_runs: 3
