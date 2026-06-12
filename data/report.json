@@ -1,5 +1,5 @@
 {
-  "generated": "2026-06-12 20:15",
+  "generated": "2026-06-12 20:27",
   "market": {
     "date": "2026-06-12",
     "futures_net": -65039,
@@ -13,6 +13,7 @@
       "code": "2330",
       "name": "台積電",
       "ok": true,
+      "as_of_date": "2026-06-11",
       "margin": 27470,
       "margin_diff": -698,
       "short_sale": 11,
@@ -20,17 +21,17 @@
       "chip_ratio_pct": 0.04,
       "chip_ratio_diff_pct": 0.04,
       "chip_situation": "🐻 空頭壓制：看空者眾且判斷正確，股價積弱不振。",
-      "chip_situation_date": "2026-06-11",
-      "vol_ratio": 0.62,
+      "vol_ratio": 1.09,
       "vol_abnormal": false,
       "vol_analysis": "🛡️ 量能平穩，盤勢處於區間震盪。",
-      "price_close": 2310.0,
-      "price_change": 60.0
+      "price_close": 2250.0,
+      "price_change": -5.0
     },
     {
       "code": "006208",
       "name": "富邦台50",
       "ok": true,
+      "as_of_date": "2026-06-11",
       "margin": 268,
       "margin_diff": 4,
       "short_sale": 29,
@@ -38,17 +39,17 @@
       "chip_ratio_pct": 10.82,
       "chip_ratio_diff_pct": -0.16,
       "chip_situation": "⚠️ 殺多盤：多方認賠殺出，融資斷頭壓力大。",
-      "chip_situation_date": "2026-06-11",
-      "vol_ratio": 0.58,
+      "vol_ratio": 1.28,
       "vol_abnormal": false,
       "vol_analysis": "🛡️ 量能平穩，盤勢處於區間震盪。",
-      "price_close": 236.1,
-      "price_change": 5.1
+      "price_close": 231.0,
+      "price_change": -1.05
     },
     {
       "code": "00878",
       "name": "國泰高股息",
       "ok": true,
+      "as_of_date": "2026-06-11",
       "margin": 4153,
       "margin_diff": 44,
       "short_sale": 29,
@@ -56,12 +57,11 @@
       "chip_ratio_pct": 0.7,
       "chip_ratio_diff_pct": -0.03,
       "chip_situation": "⚠️ 殺多盤：多方認賠殺出，融資斷頭壓力大。",
-      "chip_situation_date": "2026-06-11",
-      "vol_ratio": 0.56,
+      "vol_ratio": 0.6,
       "vol_abnormal": false,
       "vol_analysis": "🛡️ 量能平穩，盤勢處於區間震盪。",
-      "price_close": 32.05,
-      "price_change": 0.45
+      "price_close": 31.6,
+      "price_change": 0.0
     }
   ]
 }
