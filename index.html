@@ -41,7 +41,21 @@
       margin-bottom: 10px;
     }
     .header-top h1 { font-size: 1.05rem; font-weight: 700; }
+    .header-right { display: flex; align-items: center; gap: 10px; }
     .updated { font-size: 0.75rem; color: var(--muted); }
+    .btn-refresh {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 1rem;
+      line-height: 1;
+      padding: 4px 8px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .btn-refresh:hover { color: var(--blue); border-color: var(--blue); }
+    .btn-refresh.spinning { animation: spin .7s linear infinite; }
 
     /* ── Tabs ── */
     .tabs {
@@ -297,7 +311,10 @@
 <header>
   <div class="header-top">
     <h1>📊 盤後籌碼報告</h1>
-    <span class="updated" id="updated">載入中…</span>
+    <div class="header-right">
+      <span class="updated" id="updated">載入中…</span>
+      <button class="btn-refresh" id="btnRefresh" title="重新載入">↻</button>
+    </div>
   </div>
   <div class="tabs" id="tabs"></div>
 </header>
@@ -536,37 +553,52 @@ function renderError(msg) {
     </div>`;
 }
 
-fetchData().then(data => {
-  document.getElementById('updated').textContent = `更新：${data.generated}`;
+function loadData() {
+  const btn = document.getElementById('btnRefresh');
+  btn.classList.add('spinning');
+  btn.disabled = true;
+  document.getElementById('updated').textContent = '載入中…';
+  document.getElementById('tabs').innerHTML = '';
+  document.getElementById('pages').innerHTML = '';
 
-  const stocks = data.stocks || [];
-  window._stockCount = stocks.length;
+  fetchData().then(data => {
+    document.getElementById('updated').textContent = `更新：${data.generated}`;
 
-  // Build tabs
-  const tabsEl  = document.getElementById('tabs');
-  const pagesEl = document.getElementById('pages');
+    const stocks = data.stocks || [];
+    window._stockCount = stocks.length;
 
-  const tabDefs = [
-    { label: '🌐 大盤', html: renderMarket(data.market) },
-    ...stocks.map(s => ({ label: s.code, html: renderStock(s) })),
-    { label: '📖 說明', html: renderGuide() },
-    { label: '⚙️ 管理', html: renderManage(stocks) },
-  ];
+    const tabsEl  = document.getElementById('tabs');
+    const pagesEl = document.getElementById('pages');
 
-  tabDefs.forEach((t, i) => {
-    const tab = document.createElement('div');
-    tab.className = 'tab' + (i === 0 ? ' active' : '');
-    tab.textContent = t.label;
-    tab.onclick = () => switchTab(i);
-    tabsEl.appendChild(tab);
+    const tabDefs = [
+      { label: '🌐 大盤', html: renderMarket(data.market) },
+      ...stocks.map(s => ({ label: s.code, html: renderStock(s) })),
+      { label: '📖 說明', html: renderGuide() },
+      { label: '⚙️ 管理', html: renderManage(stocks) },
+    ];
 
-    const page = document.createElement('div');
-    page.className = 'page' + (i === 0 ? ' active' : '');
-    page.innerHTML = t.html;
-    pagesEl.appendChild(page);
-  });
+    tabDefs.forEach((t, i) => {
+      const tab = document.createElement('div');
+      tab.className = 'tab' + (i === 0 ? ' active' : '');
+      tab.textContent = t.label;
+      tab.onclick = () => switchTab(i);
+      tabsEl.appendChild(tab);
 
-}).catch(e => renderError(e.message));
+      const page = document.createElement('div');
+      page.className = 'page' + (i === 0 ? ' active' : '');
+      page.innerHTML = t.html;
+      pagesEl.appendChild(page);
+    });
+
+  }).catch(e => renderError(e.message))
+    .finally(() => {
+      btn.classList.remove('spinning');
+      btn.disabled = false;
+    });
+}
+
+document.getElementById('btnRefresh').onclick = loadData;
+loadData();
 </script>
 </body>
 </html>
