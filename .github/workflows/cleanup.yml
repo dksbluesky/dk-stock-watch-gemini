@@ -11,7 +11,7 @@ jobs:
     permissions:
       actions: write
     steps:
-      - name: Keep latest 3 runs per workflow, delete the rest
+      - name: Keep latest 1 run per workflow (3 total in All Workflows view)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -21,14 +21,12 @@ jobs:
 
           repo = "${{ github.repository }}"
 
-          # gh run list includes ALL workflow runs including pages build
           result = subprocess.run(
             ['gh', 'run', 'list', '--repo', repo, '--limit', '200',
              '--json', 'databaseId,workflowName'],
             capture_output=True, text=True
           )
           runs = json.loads(result.stdout)
-          print(f"Found {len(runs)} total runs")
 
           by_workflow = defaultdict(list)
           for r in runs:
@@ -36,18 +34,17 @@ jobs:
 
           deleted = 0
           for wf, ids in by_workflow.items():
-            print(f"  {wf}: {len(ids)} runs, keeping 3, deleting {max(0,len(ids)-3)}")
-            for run_id in ids[3:]:
+            for run_id in ids[1:]:   # keep only the latest 1 per workflow
               res = subprocess.run(
                 ['gh', 'api', '-X', 'DELETE',
                  f'/repos/{repo}/actions/runs/{run_id}'],
                 capture_output=True, text=True
               )
               if res.returncode == 0:
-                print(f"    ✓ Deleted run {run_id}")
+                print(f"✓ Deleted {wf} run {run_id}")
                 deleted += 1
               else:
-                print(f"    ✗ Failed run {run_id}: {res.stderr.strip()}")
+                print(f"✗ Failed {wf} run {run_id}: {res.stderr.strip()}")
 
           print(f"Done: deleted {deleted} runs")
           PYEOF
