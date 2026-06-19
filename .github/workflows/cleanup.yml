@@ -12,40 +12,42 @@ jobs:
       actions: write
     steps:
       - name: Keep latest 3 runs per workflow, delete the rest
-        uses: actions/github-script@v7
-        with:
-          script: |
-            // Fetch ALL runs across every workflow (including pages build and deployment)
-            const allRuns = [];
-            let page = 1;
-            while (true) {
-              const { data } = await github.rest.actions.listWorkflowRunsForRepo({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                per_page: 100,
-                page,
-              });
-              allRuns.push(...data.workflow_runs);
-              if (data.workflow_runs.length < 100) break;
-              page++;
-            }
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 - <<'PYEOF'
+          import subprocess, json
+          from collections import defaultdict
 
-            // Group by workflow_id (API returns newest-first already)
-            const byWorkflow = {};
-            for (const run of allRuns) {
-              if (!byWorkflow[run.workflow_id]) byWorkflow[run.workflow_id] = [];
-              byWorkflow[run.workflow_id].push(run);
-            }
+          repo = "${{ github.repository }}"
 
-            // Keep latest 3 per group, delete the rest
-            for (const [wfId, runs] of Object.entries(byWorkflow)) {
-              const toDelete = runs.slice(3);
-              for (const run of toDelete) {
-                await github.rest.actions.deleteWorkflowRun({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  run_id: run.id,
-                });
-                console.log(`Deleted "${run.name}" run #${run.run_number}`);
-              }
-            }
+          # gh run list includes ALL workflow runs including pages build
+          result = subprocess.run(
+            ['gh', 'run', 'list', '--repo', repo, '--limit', '200',
+             '--json', 'databaseId,workflowName'],
+            capture_output=True, text=True
+          )
+          runs = json.loads(result.stdout)
+          print(f"Found {len(runs)} total runs")
+
+          by_workflow = defaultdict(list)
+          for r in runs:
+            by_workflow[r['workflowName']].append(r['databaseId'])
+
+          deleted = 0
+          for wf, ids in by_workflow.items():
+            print(f"  {wf}: {len(ids)} runs, keeping 3, deleting {max(0,len(ids)-3)}")
+            for run_id in ids[3:]:
+              res = subprocess.run(
+                ['gh', 'api', '-X', 'DELETE',
+                 f'/repos/{repo}/actions/runs/{run_id}'],
+                capture_output=True, text=True
+              )
+              if res.returncode == 0:
+                print(f"    ✓ Deleted run {run_id}")
+                deleted += 1
+              else:
+                print(f"    ✗ Failed run {run_id}: {res.stderr.strip()}")
+
+          print(f"Done: deleted {deleted} runs")
+          PYEOF
