@@ -1,0 +1,14 @@
+{
+  "name": "盤後籌碼報告",
+  "short_name": "籌碼報告",
+  "id": "./post-market-chip-report-pwa",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "theme_color": "#0f4a49",
+  "background_color": "#ffffff",
+  "icons": [
+    { "src": "icons/post-market-report-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/post-market-report-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

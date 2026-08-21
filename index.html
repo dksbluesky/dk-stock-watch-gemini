@@ -3,7 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0f4a49" />
   <title>🏦 盤後籌碼報告</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icons/post-market-report-192.png" />
+  <link rel="icon" sizes="192x192" href="icons/post-market-report-192.png" />
   <style>
     :root {
       --bg: #ffffff;
@@ -594,6 +598,11 @@ function loadData() {
 
 document.getElementById('btnRefresh').onclick = loadData;
 loadData();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch((error) => console.warn('Service worker registration failed:', error));
+}
 </script>
 </body>
 </html>
